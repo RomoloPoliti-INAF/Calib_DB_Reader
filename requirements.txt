@@ -1,1 +1,4 @@
 gitpython
+pandas
+PyYAML
+numpy
