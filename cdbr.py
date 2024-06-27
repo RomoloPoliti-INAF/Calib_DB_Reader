@@ -7,6 +7,7 @@ import git.cmd
 import pandas as pd
 import yaml
 
+__version__ = "0.1.0"
 
 def is_git_repo(path):
     try:
