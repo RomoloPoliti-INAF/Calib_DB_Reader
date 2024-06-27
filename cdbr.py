@@ -17,8 +17,17 @@ def is_git_repo(path):
         return False
 
 class CalibDB:
+    """Calibration Database Reader"""
     
     def __init__(self, folder: str| Path = None,remote: str=None):
+        """
+        Read the database from a folder or clone it from a remote repository
+
+        Args:
+            folder (str | Path, optional): folder of the database.
+            remote (str, optional): URL of the remote repository. Defaults to None.
+
+        """
         folder_not_exists=False
         if folder is None:
             raise ValueError("folder cannot be None")
@@ -41,19 +50,23 @@ class CalibDB:
                 self._datainit(folder)
 
     def convert_size(self,value:str)->list:
+        """Convert the Size field to a list of integers"""
         return list(map(int, value.split('-')))
 
 
     def convert_date(self,value:str)->datetime:
+        """Convert the date field to a datetime object"""
         return pd.to_datetime(value, format='%Y-%m-%d')
 
 
     def convert_date_now(self,value:str)->datetime:
+        """Convert the end date field to a datetime object, if the value is 'Now' return the current time"""
         if value == 'Now':
             return pd.Timestamp.now()
         return pd.to_datetime(value, format='%Y-%m-%d')
     
     def convert_filter(self, value:str)->int:
+        """Convert the filter field to an integer, if the value is 'all' return 0"""
         if value == 'all':
             return 0
         else:
@@ -61,6 +74,7 @@ class CalibDB:
         
 
     def _datainit(self,folder):
+        """Load the dabase from the CSV file and the version from the version.yml file"""
         db_file = folder.joinpath("calib_db.csv")
         if not db_file.exists():
             raise FileNotFoundError(
@@ -82,7 +96,20 @@ class CalibDB:
     def __repr__(self):
         return f"CalibDB: {self.version} for {self.instrument}"
     
-    def get_calib(self, module: str, date: datetime, channel: str = None, filter: int = None,read_data:bool=False):
+    def get_calib(self, module: str, date: datetime, channel: str = None, filter: int = None,read_data:bool=False)->dict:
+        """
+        Get the Calibrauion File for a given module, date, channel and filter
+
+        Args:
+            module (str): name of the calibration module
+            date (datetime): date of the acquisition of the product to calibrate
+            channel (str, optional): channel to calibrate. Defaults to None.
+            filter (int, optional): filter to calibrate. Defaults to None.
+            read_data (bool, optional): read the calibration file and add it to the returned dictionary. Defaults to False.
+
+        Returns:
+            dict: Dictionary with all the information of the calibration file and the data if read_data is True
+        """
         df = self.db
         module_mask = df['Calibration_Step'] == module
         date_mask = (df['Start'] <= date) & (df['End'] >= date)
@@ -104,11 +131,4 @@ class CalibDB:
             ret['Data'] = mtx
         return ret
 
-
-    # def get_calib(self, module:str, date: datetime,channel:str=None,filter:int=None):
-    #     return self.db[(self.db['Calibration_Step'] == module) &
-    #                   (self.db['Start'] <= date) &
-    #                   (self.db['End'] >= date)&
-    #                   (self.db['Channel']==channel if "Channel" in self.db.columns else True)&
-    # (self.db['Filter']==filter if "Filter" in self.db.columns and filter is not None else True)]
     
