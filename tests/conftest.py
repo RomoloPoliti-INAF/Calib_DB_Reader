@@ -1,13 +1,14 @@
 import pytest
 
-from cdbr import CalibDB
+from CalibDBReader import CalibDB
 
 
 def pytest_report_header(config):
     msg = ["Calibration Database Reader Test ..."]
     if config.getoption("verbose") > 0:
         msg.append("Verbose mode enabled.")
-    return msg 
+    return msg
+
 
 @pytest.fixture(scope="function")
 def cdb(tmp_path):

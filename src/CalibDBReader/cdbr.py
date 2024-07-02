@@ -1,13 +1,14 @@
 from datetime import datetime
 from pathlib import Path
-import numpy as np
 
 import git
 import git.cmd
+import numpy as np
 import pandas as pd
 import yaml
 
 __version__ = "0.1.0"
+
 
 def is_git_repo(path):
     try:
@@ -16,10 +17,11 @@ def is_git_repo(path):
     except git.exc.InvalidGitRepositoryError:
         return False
 
+
 class CalibDB:
     """Calibration Database Reader"""
-    
-    def __init__(self, folder: str| Path = None,remote: str=None):
+
+    def __init__(self, folder: str | Path = None, remote: str = None):
         """
         Read the database from a folder or clone it from a remote repository
 
@@ -28,7 +30,7 @@ class CalibDB:
             remote (str, optional): URL of the remote repository. Defaults to None.
 
         """
-        folder_not_exists=False
+        folder_not_exists = False
         if folder is None:
             raise ValueError("folder cannot be None")
         elif not isinstance(folder, Path):
@@ -36,10 +38,11 @@ class CalibDB:
         self.folder = folder
         if not folder.exists():
             if remote is None:
-                raise FileNotFoundError(f"folder {folder} does not exist, please provide a remote")
+                raise FileNotFoundError(
+                    f"folder {folder} does not exist, please provide a remote")
             else:
                 folder.mkdir(parents=True, exist_ok=True)
-                git.Repo.clone_from(url=remote,to_path=folder)
+                git.Repo.clone_from(url=remote, to_path=folder)
                 self._datainit(folder)
         else:
             if not folder.is_dir():
@@ -49,31 +52,28 @@ class CalibDB:
             else:
                 self._datainit(folder)
 
-    def convert_size(self,value:str)->list:
+    def convert_size(self, value: str) -> list:
         """Convert the Size field to a list of integers"""
         return list(map(int, value.split('-')))
 
-
-    def convert_date(self,value:str)->datetime:
+    def convert_date(self, value: str) -> datetime:
         """Convert the date field to a datetime object"""
         return pd.to_datetime(value, format='%Y-%m-%d')
 
-
-    def convert_date_now(self,value:str)->datetime:
+    def convert_date_now(self, value: str) -> datetime:
         """Convert the end date field to a datetime object, if the value is 'Now' return the current time"""
         if value == 'Now':
             return pd.Timestamp.now()
         return pd.to_datetime(value, format='%Y-%m-%d')
-    
-    def convert_filter(self, value:str)->int:
+
+    def convert_filter(self, value: str) -> int:
         """Convert the filter field to an integer, if the value is 'all' return 0"""
         if value == 'all':
             return 0
         else:
             return int(value)
-        
 
-    def _datainit(self,folder):
+    def _datainit(self, folder):
         """Load the dabase from the CSV file and the version from the version.yml file"""
         db_file = folder.joinpath("calib_db.csv")
         if not db_file.exists():
@@ -89,20 +89,20 @@ class CalibDB:
             sata = yaml.safe_load(f)
         self.version = sata["version"]
         self.instrument = sata["instrument"]
-        
+
     def __str__(self):
         return f"CalibDB: {self.version} for {self.instrument}"
-    
+
     def __repr__(self):
         return f"CalibDB: {self.version} for {self.instrument}"
-    
-    def get_calib(self, module: str, date: datetime, channel: str = None, filter: int = None,read_data:bool=False)->dict:
+
+    def get_calib(self, calibration_step: str, date: datetime, channel: str = None, filter: int = None, read_data: bool = False) -> dict:
         """
         Get the Calibrauion File for a given module, date, channel and filter
 
         Args:
-            module (str): name of the calibration module
-            date (datetime): date of the acquisition of the product to calibrate
+            calibration_step (str): name of the calibration module
+            date (datetime): acquisition date of the product to calibrate
             channel (str, optional): channel to calibrate. Defaults to None.
             filter (int, optional): filter to calibrate. Defaults to None.
             read_data (bool, optional): read the calibration file and add it to the returned dictionary. Defaults to False.
@@ -111,24 +111,24 @@ class CalibDB:
             dict: Dictionary with all the information of the calibration file and the data if read_data is True
         """
         df = self.db
-        module_mask = df['Calibration_Step'] == module
+        module_mask = df['Calibration_Step'] == calibration_step
         date_mask = (df['Start'] <= date) & (df['End'] >= date)
 
         if "Channel" in df.columns and channel is not None:
             channel_mask = (df['Channel'] ==
-                            channel) 
+                            channel)
         else:
             channel_mask = True
 
         if "Filter" in df.columns and filter is not None:
-            filter_mask = (df['Filter'] == filter) 
+            filter_mask = (df['Filter'] == filter)
         else:
             filter_mask = True
-        ret=df[module_mask & date_mask & channel_mask & filter_mask].to_dict(orient='records')[0]
+        ret = df[module_mask & date_mask & channel_mask &
+                 filter_mask].to_dict(orient='records')[0]
         if read_data:
-            mtx = np.fromfile(self.folder.joinpath(ret['File']), dtype=ret['Type'])
+            mtx = np.fromfile(self.folder.joinpath(
+                ret['File']), dtype=ret['Type'])
             mtx = mtx.reshape(ret['Size'])
             ret['Data'] = mtx
         return ret
-
-    
