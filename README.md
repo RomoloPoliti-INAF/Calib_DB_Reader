@@ -3,6 +3,7 @@
 ![Language Python 3.12](https://img.shields.io/badge/python-3.12-orange?style=plastic&logo=python)
 ![BepiColombo SIMBIO-SYS](https://img.shields.io/badge/BepiColombo-SIMBIO--SYS-blue?style=plastic)
 ![JUICE JANUS](https://img.shields.io/badge/JUICE-JANUS-blue?style=plastic)
+[![DOI](https://zenodo.org/badge/820492051.svg)](https://zenodo.org/doi/10.5281/zenodo.12634122)
 
 This software is able to read the calibration database in a standard format.
 
