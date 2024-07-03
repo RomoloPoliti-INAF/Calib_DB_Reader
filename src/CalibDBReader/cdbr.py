@@ -20,6 +20,12 @@ def is_git_repo(path):
 
 class CalibDB:
     """Calibration Database Reader"""
+    
+    """TODO:
+        - add support for PyPI packages
+        - check the version of the database and compare with the remote (git or pip)
+        - add instruments nicknames
+    """
 
     def __init__(self, folder: str | Path = None, remote: str = None):
         """
