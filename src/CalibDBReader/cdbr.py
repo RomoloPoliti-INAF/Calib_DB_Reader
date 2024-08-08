@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 def is_git_repo(path):
@@ -78,6 +78,15 @@ class CalibDB:
             return 0
         else:
             return int(value)
+        
+    def convert_arrays(self, value: str) -> list|str:
+        """Convert the Arrays field to a list of strings"""
+        if '-' in value:
+            return value.split('-')
+        else:
+            if value == 'Null':
+                return 'Null'
+        return value
 
     def _datainit(self, folder):
         """Load the dabase from the CSV file and the version from the version.yml file"""
@@ -91,6 +100,8 @@ class CalibDB:
         self.db['End'] = self.db['End'].apply(self.convert_date_now)
         if "Filter" in self.db.columns:
             self.db['Filter'] = self.db['Filter'].apply(self.convert_filter)
+        if "Arrays" in self.db.columns:
+            self.db['Arrays'] = self.db['Arrays'].apply(self.convert_arrays)
         with open(folder.joinpath("version.yml")) as f:
             sata = yaml.safe_load(f)
         self.version = sata["version"]
@@ -133,8 +144,20 @@ class CalibDB:
         ret = df[module_mask & date_mask & channel_mask &
                  filter_mask].to_dict(orient='records')[0]
         if read_data:
-            mtx = np.fromfile(self.folder.joinpath(
-                ret['File']), dtype=ret['Type'])
-            mtx = mtx.reshape(ret['Size'])
+            fileName = self.folder.joinpath(ret['File'])
+            if fileName.suffix == '.npz':
+                if "Arrays" in df.columns:
+                    mtx = {}
+                    with np.load(fileName) as data:
+                        for item in ret['Arrays']:
+                            mtx[item] = data[item]
+                else:
+                    with np.load(fileName) as data:
+                        mtx = data['Data']
+            else:
+                mtx = np.fromfile(self.folder.joinpath(
+                    ret['File']), dtype=ret['Type'])
+                mtx = mtx.reshape(ret['Size'])
             ret['Data'] = mtx
+        ret['File'] = self.folder.joinpath(ret['File'])
         return ret

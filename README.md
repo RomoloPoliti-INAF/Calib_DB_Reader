@@ -1,5 +1,5 @@
 # Calibration Database Reader
-![Version 0.1.0](https://img.shields.io/badge/version-0.1.0-blue?style=plastic)
+![Version 0.2.0](https://img.shields.io/badge/version-0.2.0-blue?style=plastic)
 ![Language Python 3.12](https://img.shields.io/badge/python-3.12-orange?style=plastic&logo=python)
 ![BepiColombo SIMBIO-SYS](https://img.shields.io/badge/BepiColombo-SIMBIO--SYS-blue?style=plastic)
 ![JUICE JANUS](https://img.shields.io/badge/JUICE-JANUS-blue?style=plastic)
@@ -69,3 +69,9 @@ Returns information about the calibration data and the calibration data that mee
 - **Start** is the start date of validity of the matrix
 - **End** is the end date of validity of the matrix. If the value is "*Now*" means that there is no end of validity.
 - **File** is the path and the the name of the file containing the matrix.
+- **Arrays** is the name of the matrices in the npz file. If the field is not present the software will try to extract one matrix named *data*
+
+The Supported file format are:
+
+- **binary file** 2D or 3D binary matryx
+- **numpy compressed file** nmz file, in this case the *Size* and *Type* fields have only descriptive aim.
