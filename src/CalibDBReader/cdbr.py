@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 
 def is_git_repo(path):
@@ -27,7 +27,7 @@ class CalibDB:
         - add instruments nicknames
     """
 
-    def __init__(self, folder: str | Path = None, remote: str = None):
+    def __init__(self, folder: str | Path = None, remote: str = None, check_git: bool = True):
         """
         Read the database from a folder or clone it from a remote repository
 
@@ -53,10 +53,11 @@ class CalibDB:
         else:
             if not folder.is_dir():
                 raise NotADirectoryError(f"{folder} is not a directory")
-            if not is_git_repo(folder):
+            if not is_git_repo(folder) and check_git:
                 raise git.exc.GitError(f"{folder} is not a git repository")
             else:
                 self._datainit(folder)
+            self.check_git = check_git
 
     def convert_size(self, value: str) -> list:
         """Convert the Size field to a list of integers"""

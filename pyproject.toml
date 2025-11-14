@@ -1,19 +1,21 @@
 [project]
 name = "CalibDBReader"
-version = "0.2.0"
+version = "0.3.0"
 description="Reader for the calibration database"
 dependencies = [
-    "gitpython",
-    "pandas",
-    "PyYaml",
-    "numpy",
 
-    'importlib-metadata; python_version>"3.11"',
+    'importlib-metadata',
+
+    "gitpython (>=3.1.45,<4.0.0)",
+    "pandas (>=2.3.3,<3.0.0)",
+    "pyyaml (>=6.0.3,<7.0.0)",
+    "numpy (>=2.3.4,<3.0.0)",
 ]
 
 authors = [{name="Romolo Politi", email ="Romolo.Politi@inaf.it" }]
 license = {text = "GNU GPL ver3"} 
 readme = "README.md"
+requires-python = ">= 3.11, <3.15"
 
 
 keywords = ["Space Mission", "BepiColombo", "SIMBIO_SYS", "Calibration Database", "JUICE", "JANUS"]

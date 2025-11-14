@@ -1,5 +1,9 @@
 # CalibDBReader Changelog
 
+## Versopm 0.3.0 2025/11/14
+
+- introduced **check_git** option. If *False* do not perform the git check
+
 ## Version 0.2.0
 
 - Support to numpy compressed file format (npz)
