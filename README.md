@@ -1,5 +1,5 @@
 # Calibration Database Reader
-![Version 0.3.0](https://img.shields.io/badge/version-0.3.0-blue?style=plastic)
+![Version 0.4.0](https://img.shields.io/badge/version-0.3.0-blue?style=plastic)
 ![Language Python 3.14](https://img.shields.io/badge/python-3.14-orange?style=plastic&logo=python)
 ![BepiColombo SIMBIO-SYS](https://img.shields.io/badge/BepiColombo-SIMBIO--SYS-blue?style=plastic)
 ![JUICE JANUS](https://img.shields.io/badge/JUICE-JANUS-blue?style=plastic)

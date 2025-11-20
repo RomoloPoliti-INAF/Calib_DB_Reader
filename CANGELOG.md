@@ -1,6 +1,10 @@
 # CalibDBReader Changelog
 
-## Versopm 0.3.0 2025/11/14
+## Version 0.4.0
+
+- Poetry porting
+
+## Version 0.3.0 
 
 - introduced **check_git** option. If *False* do not perform the git check
 

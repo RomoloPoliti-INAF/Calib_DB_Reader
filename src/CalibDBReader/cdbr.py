@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 
 def is_git_repo(path):
