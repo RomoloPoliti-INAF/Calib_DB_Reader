@@ -1,6 +1,6 @@
 [project]
 name = "CalibDBReader"
-version = "0.4.0"
+version = "0.6.0"
 description="Reader for the calibration database"
 dependencies = [
 
@@ -36,9 +36,9 @@ packages = [
 ]
 # test =["pytest"]
 
-# [build-system]
-# requires = ["setuptools", "setuptools-scm"]
-# build-backend = "setuptools.build_meta"
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
 
-[tool.setuptools_scm]
+
 

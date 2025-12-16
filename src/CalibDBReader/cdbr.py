@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-__version__ = "0.4.0"
+__version__ = "0.6.0"
 
 
 def is_git_repo(path):
@@ -27,7 +27,7 @@ class CalibDB:
         - add instruments nicknames
     """
 
-    def __init__(self, folder: str | Path = None, remote: str = None, check_git: bool = True):
+    def __init__(self, folder: str | Path = None, remote: str = None, check_git: bool = True,dbname:str='calib_db'):
         """
         Read the database from a folder or clone it from a remote repository
 
@@ -37,6 +37,7 @@ class CalibDB:
 
         """
         folder_not_exists = False
+        self.dbname=dbname
         if folder is None:
             raise ValueError("folder cannot be None")
         elif not isinstance(folder, Path):
@@ -91,7 +92,7 @@ class CalibDB:
 
     def _datainit(self, folder):
         """Load the dabase from the CSV file and the version from the version.yml file"""
-        db_file = folder.joinpath("calib_db.csv")
+        db_file = folder.joinpath(f"{self.dbname}.csv")
         if not db_file.exists():
             raise FileNotFoundError(
                 f"{db_file} does not exist. Not a valid calib_db folder")
