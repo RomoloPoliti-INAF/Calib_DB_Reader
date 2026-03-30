@@ -1,0 +1,11 @@
+LICENSE
+README.md
+pyproject.toml
+src/CalibDBReader/__init__.py
+src/CalibDBReader/cdbr.py
+src/CalibDBReader.egg-info/PKG-INFO
+src/CalibDBReader.egg-info/SOURCES.txt
+src/CalibDBReader.egg-info/dependency_links.txt
+src/CalibDBReader.egg-info/requires.txt
+src/CalibDBReader.egg-info/top_level.txt
+tests/test_init.py
