@@ -241,13 +241,24 @@ class CalibDB:
                 mtx_temp = np.fromfile(
                     self.folder.joinpath(ret["File"]), dtype=ret["Type"]
                 )
-                mtx_temp = mtx_temp.reshape(ret["Size"])
+                # mtx_temp = mtx_temp.reshape(ret["Size"])
                 if "Arrays" in df.columns and ret["Arrays"] != "Null":
                     mtx = {}
+                    base_shape = ret["Size"][:-1]      # [2000, 1504]
+                    base_size = np.prod(base_shape)    # 2000 * 1504
+
                     for item in ret["Arrays"]:
-                        mtx[item[0]] = mtx_temp[:,:,item[1]:item[2]]
+                        name = item[0]
+                        start_layer = item[1]
+                        stop_layer = item[2]
+                        depth = stop_layer - start_layer
+
+                        start = base_size * start_layer
+                        stop = base_size * stop_layer
+
+                        mtx[name] = mtx_temp[start:stop].reshape((*base_shape, depth))
                 else:
-                    mtx = mtx_temp
+                    mtx = mtx_temp.reshape(ret["Size"])
             ret["Data"] = mtx
         ret["File"] = self.folder.joinpath(ret["File"])
         if return_class:
