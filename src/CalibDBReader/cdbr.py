@@ -242,7 +242,7 @@ class CalibDB:
                     self.folder.joinpath(ret["File"]), dtype=ret["Type"]
                 )
                 mtx_temp = mtx_temp.reshape(ret["Size"])
-                if "Arrays" in df.columns:
+                if "Arrays" in df.columns and ret["Arrays"] != "Null":
                     mtx = {}
                     for item in ret["Arrays"]:
                         mtx[item[0]] = mtx_temp[item[1]:item[2]]

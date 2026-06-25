@@ -1,5 +1,9 @@
 # CalibDBReader Changelog
 
+## Vearsion 1.0.2
+
+- fix bugs
+
 ## Version 1.0.0
 
 - introduced the optional class CalibrationProduct

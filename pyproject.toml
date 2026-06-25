@@ -1,6 +1,6 @@
 [project]
 name = "CalibDBReader"
-version = "1.0.1"
+version = "1.0.2"
 description="Reader for the calibration database"
 dependencies = [
 
