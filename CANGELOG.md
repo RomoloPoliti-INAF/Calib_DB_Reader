@@ -1,5 +1,9 @@
 # CalibDBReader Changelog
 
+## Version 1.0.3
+
+- fix bug in the array shape
+
 ## Vearsion 1.0.2
 
 - fix bugs

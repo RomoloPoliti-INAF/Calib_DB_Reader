@@ -245,7 +245,7 @@ class CalibDB:
                 if "Arrays" in df.columns and ret["Arrays"] != "Null":
                     mtx = {}
                     for item in ret["Arrays"]:
-                        mtx[item[0]] = mtx_temp[item[1]:item[2]]
+                        mtx[item[0]] = mtx_temp[:,:,item[1]:item[2]]
                 else:
                     mtx = mtx_temp
             ret["Data"] = mtx
