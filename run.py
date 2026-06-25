@@ -5,7 +5,7 @@ from rich.console import Console
 test = CalibDB("../../JANUS/Software/janus_cal_db")
 print(test)
 data = test.get_calib(
-    "darkCorrection", "2024-01-01", read_data=True, return_class=True, debug=True
+    "radCorrection", "2024-01-01", filter=1,read_data=True, return_class=True, debug=True
 )
 
 console = Console()

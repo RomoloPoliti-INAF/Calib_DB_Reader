@@ -113,11 +113,24 @@ class CalibDB:
             return 0
         else:
             return int(value)
+        
+    def array_analysis(self, value: str) -> list | str:
+        """Convert the Arrays field to a list of strings"""
+        items= value.split("-")
+        for i,item in enumerate(items):
+            if "|" in item:
+                temporary_array = item.split("|")
+                items[i] = [temporary_array[0],int(temporary_array[1]),int(temporary_array[2])]
+            else:
+                items[i] = [item,i,i+1]
+        return items
+
+        
 
     def convert_arrays(self, value: str) -> list | str:
         """Convert the Arrays field to a list of strings"""
         if "-" in value:
-            return value.split("-")
+            return self.array_analysis(value)
         else:
             if value == "Null":
                 return "Null"
@@ -231,8 +244,8 @@ class CalibDB:
                 mtx_temp = mtx_temp.reshape(ret["Size"])
                 if "Arrays" in df.columns:
                     mtx = {}
-                    for i, item in enumerate(ret["Arrays"]):
-                        mtx[item] = mtx_temp[i]
+                    for item in ret["Arrays"]:
+                        mtx[item[0]] = mtx_temp[item[1]:item[2]]
                 else:
                     mtx = mtx_temp
             ret["Data"] = mtx
