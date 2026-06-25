@@ -13,19 +13,21 @@ def test_folder_none():
 def test_folder_not_exists():
     with pytest.raises(FileNotFoundError) as e:
         CalibDB("test_folder")
-    assert str(
-        e.value) == "folder test_folder does not exist, please provide a remote"
+    assert str(e.value) == "folder test_folder does not exist, please provide a remote"
 
 
 def test_folder_not_exists_remote_error(tmp_path):
     with pytest.raises(git.exc.GitError) as e:
-        CalibDB(tmp_path / "test_folder",
-                remote="git@github.com:JANUS-JUICE/janus_cali_db.git")
+        CalibDB(
+            tmp_path / "test_folder",
+            remote="git@github.com:JANUS-JUICE/janus_cali_db.git",
+        )
 
 
 def test_folder_not_exists_remote(tmp_path):
-    CalibDB(tmp_path / "test_folder",
-            remote="git@github.com:JANUS-JUICE/janus_cal_db.git")
+    CalibDB(
+        tmp_path / "test_folder", remote="git@github.com:JANUS-JUICE/janus_cal_db.git"
+    )
 
 
 def test_folder_exists_not_dir(tmp_path):

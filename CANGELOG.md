@@ -1,5 +1,10 @@
 # CalibDBReader Changelog
 
+## Version 1.0.0
+
+- introduced the optional class CalibrationProduct
+- introduced the filed lvid
+
 ## Version 0.4.0
 
 - Poetry porting
