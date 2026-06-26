@@ -247,7 +247,7 @@ class CalibDB:
                 # mtx_temp = mtx_temp.reshape(ret["Size"])
                 if "Arrays" in df.columns and ret["Arrays"] != "Null":
                     mtx = {}
-                    info =pds4_tools.read(pds_label)
+                    info =pds4_tools.read(str(pds_label))
                     for item in info.structures:
                         mtx[item.id]=item.data
 
