@@ -11,6 +11,7 @@ import yaml
 from myxmltools import getFromXml
 from rich import print
 from semantic_version_tools import Vers
+import pds4_tools
 
 
 version = Vers(get_version("CalibDBReader"))
@@ -185,6 +186,7 @@ class CalibDB:
         Returns:
             dict: Dictionary with all the information of the calibration file and the data if read_data is True
         """
+        pds4_file = False
         df = self.db
         if debug:
             print(f"Calibration Step: {calibration_step}")
@@ -238,25 +240,17 @@ class CalibDB:
                     if pds_label.exists():
                         tree = parse(str(pds_label))
                         ret["LVID"] = getFromXml(tree, "pds:logical_identifier")
+                        pds4_file=True
                 mtx_temp = np.fromfile(
                     self.folder.joinpath(ret["File"]), dtype=ret["Type"]
                 )
                 # mtx_temp = mtx_temp.reshape(ret["Size"])
                 if "Arrays" in df.columns and ret["Arrays"] != "Null":
                     mtx = {}
-                    base_shape = ret["Size"][:-1]      # [2000, 1504]
-                    base_size = np.prod(base_shape)    # 2000 * 1504
+                    info =pds4_tools.read(pds_label)
+                    for item in info.structures:
+                        mtx[item.id]=item.data
 
-                    for item in ret["Arrays"]:
-                        name = item[0]
-                        start_layer = item[1]
-                        stop_layer = item[2]
-                        depth = stop_layer - start_layer
-
-                        start = base_size * start_layer
-                        stop = base_size * stop_layer
-
-                        mtx[name] = mtx_temp[start:stop].reshape((*base_shape, depth))
                 else:
                     mtx = mtx_temp.reshape(ret["Size"])
             ret["Data"] = mtx
