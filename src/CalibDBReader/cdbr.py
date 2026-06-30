@@ -234,7 +234,10 @@ class CalibDB:
                 else:
                     with np.load(fileName) as data:
                         mtx = data["Data"]
+            elif fileName.suffix == ".csv":
+                    mtx = pd.read_csv(fileName)
             else:
+                
                 if fileName.suffix == ".dat":
                     pds_label = fileName.with_suffix(".lblx")
                     if pds_label.exists():

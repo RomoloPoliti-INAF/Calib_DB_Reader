@@ -1,5 +1,9 @@
 # CalibDBReader Changelog
 
+## Version 1.1.0
+
+- introduced extension csv returned as pandas dataframe
+
 ## Version 1.0.3
 
 - fix bug in the array shape
