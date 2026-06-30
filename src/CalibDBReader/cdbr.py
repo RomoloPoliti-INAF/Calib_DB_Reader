@@ -236,6 +236,11 @@ class CalibDB:
                         mtx = data["Data"]
             elif fileName.suffix == ".csv":
                     mtx = pd.read_csv(fileName)
+                    pds_label = fileName.with_suffix(".lblx")
+                    if pds_label.exists():
+                        tree = parse(str(pds_label))
+                        ret["LVID"] = getFromXml(tree, "logical_identifier")
+                        
             else:
                 
                 if fileName.suffix == ".dat":
