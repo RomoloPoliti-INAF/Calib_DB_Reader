@@ -1,45 +1,99 @@
-# Calibration Database Reader
-![Version 0.6.0](https://img.shields.io/badge/version-0.5.0-blue?style=plastic)
-![Language Python 3.14](https://img.shields.io/badge/python-3.14-orange?style=plastic&logo=python)
+# CalibDBReader
+
+![Version 0.9.0](https://img.shields.io/badge/version-0.9.0-blue?style=plastic)
+![Language Python 3.13+](https://img.shields.io/badge/python-3.13%2B-orange?style=plastic&logo=python)
 ![BepiColombo SIMBIO-SYS](https://img.shields.io/badge/BepiColombo-SIMBIO--SYS-blue?style=plastic)
 ![JUICE JANUS](https://img.shields.io/badge/JUICE-JANUS-blue?style=plastic)
 [![DOI](https://zenodo.org/badge/820492051.svg)](https://zenodo.org/doi/10.5281/zenodo.12634122)
 
-This software is able to read the calibration database in a standard format.
+`CalibDBReader` loads, queries, validates, and displays calibration databases
+used by SIMBIO-SYS and JANUS pipelines.
 
-The database consists of three elements:
-- The `version.yml` file, which contains the version number of the database
-- The `calib_db.csv` file, which contains information about the calibration data and their scope of applicability (see the specific [section](#database-fields) for details)
-- The `data` folder, which contains the calibration matrices
+The database consists of:
+
+- `manifest.json`, containing the database version and instrument;
+- a CSV index such as `calib_db.csv`;
+- calibration files referenced by the CSV `File` column.
+
+Values in the CSV `File` column are paths relative to the database folder, for
+example `data/response/stc/calibration.dat`.
 
 ## Installation
 
-### via GitHub
+### From GitHub
 
-To install the code you can use the syntax:
+To add the package directly from GitHub with uv:
 
-```console
-$ python3 -m pip install -U pip
-$ pip install git+https://github.com/RomoloPoliti-INAF/Calib_DB_Reader.git
+```bash
+uv add git+https://github.com/RomoloPoliti-INAF/Calib_DB_Reader.git
 ```
 
-## Usage
+### Development
 
-> CalibDB(folder: str, remote: str)
+Create the local environment and install all development dependencies:
 
-where:
+```bash
+uv sync
+```
 
-- **folder (str)** is the the folder that host the database
-- **remote (str, optional)** is the git repository that host the db
+Run the tests and build the distributions with:
 
-If the folder does not exist, the software will clone the remote repository. If it is not present, an error will occur.
+```bash
+uv run pytest -q
+uv run ruff check src tests
+uv build
+```
 
-### Example
+The package installs the `calibDB` command:
+
+```bash
+uv run calibDB version
+uv run calibDB version /path/to/calibration/database
+uv run calibDB about
+uv run calibDB dbdisplay /path/to/calibration/calib_db.csv --check
+```
+
+The optional path passed to `version` may be either the database folder or its
+CSV file. When provided, the command also displays the database version and
+instrument from `manifest.json`.
+
+## Python usage
 
 ```python
 from CalibDBReader import CalibDB
-db=CalibDB(folder = "../../JANUS/Software/janus_cal_db",
-            remote = "git@github.com:JANUS-JUICE/janus_cal_db.git")
+
+database = CalibDB(
+    folder="/path/to/database",
+    dbname="calib_db",
+    check_git=False,
+    check=True,
+)
+```
+
+Constructor arguments:
+
+- `folder`: local database directory;
+- `remote`: optional Git repository cloned when the folder is missing;
+- `check_git`: verify that the database directory is a Git repository;
+- `dbname`: CSV filename, with or without the `.csv` extension;
+- `check`: verify every calibration path as
+  `<database folder>/<File column value>`; a missing file raises
+  `FileNotFoundError`.
+
+Absolute values in the `File` column are rejected. If `folder` does not exist
+and `remote` is supplied, the library clones the repository.
+
+### Display API
+
+```python
+import polars as pl
+
+from CalibDBReader import database_to_rich, dbdisplay
+from CalibDBReader.display import dataframe_to_rich
+
+table = dataframe_to_rich(pl.DataFrame({"name": ["STC"], "version": ["1.1"]}))
+database_table = database_to_rich("/path/to/database/calib_db.csv", check=True)
+dbdisplay("/path/to/database/calib_db.csv", check=True)
 ```
 
 ## Methods list
@@ -48,7 +102,15 @@ db=CalibDB(folder = "../../JANUS/Software/janus_cal_db",
 
 Returns information about the calibration data and the calibration data that meets the specified conditions.
 
-> CalibDBReader.get_calib(calibration_step: str, date: datetime, channel: str = None, filter: int = None, read_data: bool = False) -> dict
+```python
+database.get_calib(
+    calibration_step: str,
+    date: datetime,
+    channel: str | None = None,
+    filter: int | None = None,
+    read_data: bool = False,
+) -> dict
+```
 
 - **calibration_step (str):** name of the calibration module
 - **date (datetime):** acquisition date of the product to calibrate
@@ -68,10 +130,13 @@ Returns information about the calibration data and the calibration data that mee
 - **Filter** is the filter number
 - **Start** is the start date of validity of the matrix
 - **End** is the end date of validity of the matrix. If the value is "*Now*" means that there is no end of validity.
-- **File** is the path and the the name of the file containing the matrix.
+- **File** is the calibration file path relative to the database directory.
 - **Arrays** is the name of the matrices in the npz file. If the field is not present the software will try to extract one matrix named *data*
 
-The Supported file format are:
+Supported file formats:
 
-- **binary file** 2D or 3D binary matryx
-- **numpy compressed file** nmz file, in this case the *Size* and *Type* fields have only descriptive aim.
+- **binary file**: 2D or 3D binary matrix;
+- **NumPy compressed file**: `.npz`; in this case `Size` and `Type` are
+  descriptive.
+
+See [`CHANGELOG.md`](CHANGELOG.md) for release notes.

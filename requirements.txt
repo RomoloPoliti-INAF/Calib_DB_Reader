@@ -1,4 +1,0 @@
-gitpython
-pandas
-PyYAML
-numpy
