@@ -1,11 +1,9 @@
 [project]
 name = "CalibDBReader"
-version = "1.1.0"
-description="Reader for the calibration database"
+version = "1.2.0"
+description = "Reader for the calibration database"
 dependencies = [
-
-    'importlib-metadata',
-
+    "importlib-metadata",
     "gitpython (>=3.1.45,<4.0.0)",
     "pyyaml (>=6.0.3,<7.0.0)",
     "numpy (>=2.3.4,<3.0.0)",
@@ -13,43 +11,52 @@ dependencies = [
     "rich (>=15.0.0,<16.0.0)",
     "myxmltools (>=0.2.0,<0.3.0)",
     "pds4-tools (>=1.4,<2.0)",
-    "pandas (>=3.0.3,<4.0.0)",
+    "polars>=1.37,<2.0",
 ]
-
-authors = [{name="Romolo Politi", email ="Romolo.Politi@inaf.it" }]
-license = {text = "GNU GPL ver3"} 
+authors = [{ name = "Romolo Politi", email = "Romolo.Politi@inaf.it" }]
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
 readme = "README.md"
-requires-python = ">= 3.14, <4.0"
-
-
+requires-python = ">=3.14,<4.0"
 keywords = ["Space Mission", "BepiColombo", "SIMBIO_SYS", "Calibration Database", "JUICE", "JANUS"]
-classifiers = [
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
-]
 
 [project.urls]
 Repository = "https://github.com/RomoloPoliti-INAF/Calib_DB_Reader"
 Changelog = "https://github.com/RomoloPoliti-INAF/Calib_DB_Reader/CHANGELOG.md"
 
-
-[tool.poetry]
-packages = [
-    { include = "CalibDBReader", from = "src" },
-]
-# test =["pytest"]
-
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.11.26,<0.12"]
+build-backend = "uv_build"
 
-
+[tool.uv.build-backend]
+module-name = "CalibDBReader"
+module-root = "src"
 
 [dependency-groups]
-devel = [
-    "ruff (>=0.15.19,<0.16.0)"
+dev = [
+    "pytest>=9.0.2,<10",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.15.19,<0.16",
 ]
 
-[tool.ruff.lint.isort]
-known-first-party = ["CalibDBReader"]
-combine-as-imports = true
-lines-after-imports = 2
+
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # Pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+]
+ignore = [
+    "E501", # handled by formatter
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from importlib.metadata import version as get_version
@@ -6,13 +7,11 @@ from xml.dom.minidom import parse
 
 import git
 import numpy as np
-import pandas as pd
-import yaml
+import pds4_tools
+import polars as pl
 from myxmltools import getFromXml
 from rich import print
 from semantic_version_tools import Vers
-import pds4_tools
-
 
 version = Vers(get_version("CalibDBReader"))
 __version__ = version.full()
@@ -41,7 +40,7 @@ class CalibrationProduct:
     type: str | None = None
     size: list[int] | None = None
     arrays: list[str] | str | None = None
-    data: np.ndarray | dict[str, np.ndarray] | None = None
+    data: np.ndarray | dict[str, np.ndarray] | pl.DataFrame | None = None
     lvid: str | None = None
 
 
@@ -60,6 +59,7 @@ class CalibDB:
         remote: str = None,
         check_git: bool = True,
         dbname: str = "calib_db",
+        check: bool = False,
     ):
         """
         Read the database from a folder or clone it from a remote repository
@@ -71,6 +71,8 @@ class CalibDB:
         """
         # folder_not_exists = False
         self.dbname = dbname
+        self.check = check
+        self.check_git = check_git
         if folder is None:
             raise ValueError("folder cannot be None")
         elif not isinstance(folder, Path):
@@ -92,7 +94,7 @@ class CalibDB:
                 raise git.exc.GitError(f"{folder} is not a git repository")
             else:
                 self._datainit(folder)
-            self.check_git = check_git
+            # self.check_git = check_git
 
     def convert_size(self, value: str) -> list:
         """Convert the Size field to a list of integers"""
@@ -100,13 +102,13 @@ class CalibDB:
 
     def convert_date(self, value: str) -> datetime:
         """Convert the date field to a datetime object"""
-        return pd.to_datetime(value, format="%Y-%m-%d")
+        return datetime.strptime(value, "%Y-%m-%d")
 
     def convert_date_now(self, value: str) -> datetime:
         """Convert the end date field to a datetime object, if the value is 'Now' return the current time"""
         if value == "Now":
-            return pd.Timestamp.now()
-        return pd.to_datetime(value, format="%Y-%m-%d")
+            return datetime.now()
+        return self.convert_date(value)
 
     def convert_filter(self, value: str) -> int:
         """Convert the filter field to an integer, if the value is 'all' return 0"""
@@ -114,19 +116,21 @@ class CalibDB:
             return 0
         else:
             return int(value)
-        
+
     def array_analysis(self, value: str) -> list | str:
         """Convert the Arrays field to a list of strings"""
-        items= value.split("-")
-        for i,item in enumerate(items):
+        items = value.split("-")
+        for i, item in enumerate(items):
             if "|" in item:
                 temporary_array = item.split("|")
-                items[i] = [temporary_array[0],int(temporary_array[1]),int(temporary_array[2])]
+                items[i] = [
+                    temporary_array[0],
+                    int(temporary_array[1]),
+                    int(temporary_array[2]),
+                ]
             else:
-                items[i] = [item,i,i+1]
+                items[i] = [item, i, i + 1]
         return items
-
-        
 
     def convert_arrays(self, value: str) -> list | str:
         """Convert the Arrays field to a list of strings"""
@@ -144,18 +148,54 @@ class CalibDB:
             raise FileNotFoundError(
                 f"{db_file} does not exist. Not a valid calib_db folder"
             )
-        self.db = pd.read_csv(db_file)
-        self.db["Size"] = self.db["Size"].apply(self.convert_size)
-        self.db["Start"] = self.db["Start"].apply(self.convert_date)
-        self.db["End"] = self.db["End"].apply(self.convert_date_now)
+        self.db = pl.read_csv(db_file, infer_schema=False)
+        self.db = self.db.with_columns(
+            pl.col("Size").str.split("-").list.eval(pl.element().cast(pl.Int64)),
+            pl.col("Start").str.strptime(pl.Datetime, format="%Y-%m-%d"),
+            pl.col("End").map_elements(self.convert_date_now, return_dtype=pl.Datetime),
+        )
         if "Filter" in self.db.columns:
-            self.db["Filter"] = self.db["Filter"].apply(self.convert_filter)
-        if "Arrays" in self.db.columns:
-            self.db["Arrays"] = self.db["Arrays"].apply(self.convert_arrays)
-        with open(folder.joinpath("version.yml")) as f:
-            sata = yaml.safe_load(f)
-        self.version = sata["version"]
-        self.instrument = sata["instrument"]
+            self.db = self.db.with_columns(
+                pl.col("Filter").replace("all", "0").cast(pl.Int64)
+            )
+        manifest_file = folder / "manifest.json"
+        if not manifest_file.is_file():
+            raise FileNotFoundError(
+                f"{manifest_file} does not exist. Not a valid calib_db folder"
+            )
+        manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+        self.version = manifest["version"]
+        self.instrument = manifest["instrument"]
+        if self.check:
+            self._check_calibration_files()
+
+    def _calibration_file_path(self, file_value: str) -> Path:
+        """Return the effective path for a calibration file."""
+        relative_path = Path(str(file_value).strip())
+        if relative_path.is_absolute():
+            raise ValueError(
+                f"Calibration file path '{file_value}' must be relative to "
+                f"'{self.folder}'"
+            )
+        return self.folder / relative_path
+
+    def _check_calibration_files(self) -> None:
+        """Verify all files referenced by the calibration database."""
+        if "File" not in self.db.columns:
+            raise ValueError("The calibration database has no 'File' column.")
+
+        for row_index, file_value in enumerate(self.db.get_column("File")):
+            if file_value is None or not str(file_value).strip():
+                raise FileNotFoundError(
+                    f"Calibration file is missing from the File column at row "
+                    f"{row_index + 2}"
+                )
+
+            calibration_file = self._calibration_file_path(file_value)
+            if not calibration_file.is_file():
+                raise FileNotFoundError(
+                    f"Calibration file '{calibration_file}' does not exist"
+                )
 
     def __str__(self):
         return f"CalibDB: {self.version} for {self.instrument}"
@@ -186,8 +226,9 @@ class CalibDB:
         Returns:
             dict: Dictionary with all the information of the calibration file and the data if read_data is True
         """
-        pds4_file = False
         df = self.db
+        if isinstance(date, str):
+            date = self.convert_date(date)
         if debug:
             print(f"Calibration Step: {calibration_step}")
 
@@ -220,9 +261,11 @@ class CalibDB:
             print(f"Date mask: {date_mask}")
             print(f"Channel mask: {channel_mask}")
             print(f"Filter mask: {filter_mask}")
-        ret = df[module_mask & date_mask & channel_mask & filter_mask].to_dict(
-            orient="records"
-        )[0]
+        ret = df.filter(
+            module_mask & date_mask & channel_mask & filter_mask
+        ).to_dicts()[0]
+        if "Arrays" in ret and ret["Arrays"] is not None:
+            ret["Arrays"] = self.convert_arrays(ret["Arrays"])
         if read_data:
             fileName = self.folder.joinpath(ret["File"])
             if fileName.suffix == ".npz":
@@ -235,29 +278,27 @@ class CalibDB:
                     with np.load(fileName) as data:
                         mtx = data["Data"]
             elif fileName.suffix == ".csv":
-                    mtx = pd.read_csv(fileName)
-                    pds_label = fileName.with_suffix(".lblx")
-                    if pds_label.exists():
-                        tree = parse(str(pds_label))
-                        ret["LVID"] = getFromXml(tree, "logical_identifier")
-                        
+                mtx = pl.read_csv(fileName)
+                pds_label = fileName.with_suffix(".lblx")
+                if pds_label.exists():
+                    tree = parse(str(pds_label))
+                    ret["LVID"] = getFromXml(tree, "logical_identifier")
+
             else:
-                
                 if fileName.suffix == ".dat":
                     pds_label = fileName.with_suffix(".lblx")
                     if pds_label.exists():
                         tree = parse(str(pds_label))
                         ret["LVID"] = getFromXml(tree, "pds:logical_identifier")
-                        pds4_file=True
                 mtx_temp = np.fromfile(
                     self.folder.joinpath(ret["File"]), dtype=ret["Type"]
                 )
                 # mtx_temp = mtx_temp.reshape(ret["Size"])
                 if "Arrays" in df.columns and ret["Arrays"] != "Null":
                     mtx = {}
-                    info =pds4_tools.read(str(pds_label))
+                    info = pds4_tools.read(str(pds_label))
                     for item in info.structures:
-                        mtx[item.id]=item.data
+                        mtx[item.id] = item.data
 
                 else:
                     mtx = mtx_temp.reshape(ret["Size"])

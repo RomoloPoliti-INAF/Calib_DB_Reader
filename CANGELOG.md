@@ -2,7 +2,7 @@
 
 ## Version 1.1.0
 
-- introduced extension csv returned as pandas dataframe
+- migrated database and CSV dataframes from Pandas to Polars
 
 ## Version 1.0.3
 

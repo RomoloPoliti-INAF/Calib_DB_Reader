@@ -14,13 +14,27 @@ The database consists of three elements:
 
 ## Installation
 
-### via GitHub
+### With uv
 
-To install the code you can use the syntax:
+To create the development environment and install all dependencies:
 
 ```console
-$ python3 -m pip install -U pip
-$ pip install git+https://github.com/RomoloPoliti-INAF/Calib_DB_Reader.git
+$ uv sync
+```
+
+Run commands inside the managed environment with `uv run`, for example:
+
+```console
+$ uv run pytest
+$ uv run ruff check .
+```
+
+### via GitHub
+
+To install the package directly from GitHub:
+
+```console
+$ uv add "CalibDBReader @ git+https://github.com/RomoloPoliti-INAF/Calib_DB_Reader.git"
 ```
 
 ## Usage
