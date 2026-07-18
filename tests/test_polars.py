@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from pathlib import Path
 
 import polars as pl
 
@@ -30,6 +31,16 @@ def test_database_is_loaded_as_polars_dataframe(tmp_path):
     assert database.db.schema["End"] == pl.Datetime
     assert database.db.schema["Size"] == pl.List(pl.Int64)
     assert database.db.schema["Filter"] == pl.Int64
+
+
+def test_database_name_accepts_csv_suffix_and_path(tmp_path):
+    database = CalibDB(
+        make_database(tmp_path),
+        dbname=Path("calib_db.csv"),
+        check_git=False,
+    )
+
+    assert database.dbname == "calib_db.csv"
 
 
 def test_get_calib_returns_polars_csv_data(tmp_path):

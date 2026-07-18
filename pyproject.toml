@@ -43,6 +43,7 @@ dev = [
 [tool.ruff]
 line-length = 88
 target-version = "py314"
+extend-exclude = ["build"]
 
 [tool.ruff.lint]
 select = [

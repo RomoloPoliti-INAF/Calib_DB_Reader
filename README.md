@@ -1,5 +1,5 @@
 # Calibration Database Reader
-![Version 0.6.0](https://img.shields.io/badge/version-0.5.0-blue?style=plastic)
+![Version 1.2.0](https://img.shields.io/badge/version-1.2.0-blue?style=plastic)
 ![Language Python 3.14](https://img.shields.io/badge/python-3.14-orange?style=plastic&logo=python)
 ![BepiColombo SIMBIO-SYS](https://img.shields.io/badge/BepiColombo-SIMBIO--SYS-blue?style=plastic)
 ![JUICE JANUS](https://img.shields.io/badge/JUICE-JANUS-blue?style=plastic)
@@ -39,12 +39,17 @@ $ uv add "CalibDBReader @ git+https://github.com/RomoloPoliti-INAF/Calib_DB_Read
 
 ## Usage
 
-> CalibDB(folder: str, remote: str)
+> CalibDB(folder, remote=None, check_git=True, dbname="calib_db", check=False)
 
 where:
 
 - **folder (str)** is the the folder that host the database
-- **remote (str, optional)** is the git repository that host the db
+- **remote (str, optional)** is the git repository that hosts the database.
+- **check_git (bool)** controls repository validation.
+- **dbname (str or Path)** selects the database CSV. Both `calib_db` and
+  `calib_db.csv` are accepted, so callers can pass configuration paths without
+  producing a duplicated `.csv.csv` suffix.
+- **check (bool)** enables referenced-file validation.
 
 If the folder does not exist, the software will clone the remote repository. If it is not present, an error will occur.
 
@@ -53,8 +58,13 @@ If the folder does not exist, the software will clone the remote repository. If 
 ```python
 from CalibDBReader import CalibDB
 db=CalibDB(folder = "../../JANUS/Software/janus_cal_db",
-            remote = "git@github.com:JANUS-JUICE/janus_cal_db.git")
+            remote = "git@github.com:JANUS-JUICE/janus_cal_db.git",
+            dbname = "calib_db.csv")
 ```
+
+Calibration CSV files are loaded as Polars dataframes. CSV calibration
+products returned with `read_data=True` are also represented as Polars
+dataframes.
 
 ## Methods list
 

@@ -70,7 +70,12 @@ class CalibDB:
 
         """
         # folder_not_exists = False
-        self.dbname = dbname
+        database_name = str(dbname)
+        self.dbname = (
+            database_name
+            if database_name.lower().endswith(".csv")
+            else f"{database_name}.csv"
+        )
         self.check = check
         self.check_git = check_git
         if folder is None:
@@ -143,7 +148,7 @@ class CalibDB:
 
     def _datainit(self, folder):
         """Load the dabase from the CSV file and the version from the version.yml file"""
-        db_file = folder.joinpath(f"{self.dbname}.csv")
+        db_file = folder.joinpath(self.dbname)
         if not db_file.exists():
             raise FileNotFoundError(
                 f"{db_file} does not exist. Not a valid calib_db folder"
