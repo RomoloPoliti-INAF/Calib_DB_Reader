@@ -7,13 +7,13 @@ dependencies = [
     'importlib-metadata',
 
     "gitpython (>=3.1.45,<4.0.0)",
-    "pandas (>=2.3.3,<3.0.0)",
     "pyyaml (>=6.0.3,<7.0.0)",
     "numpy (>=2.3.4,<3.0.0)",
     "semantic-version-tools (>=1.4.1,<2.0.0)",
     "rich (>=15.0.0,<16.0.0)",
     "myxmltools (>=0.2.0,<0.3.0)",
     "pds4-tools (>=1.4,<2.0)",
+    "pandas (>=3.0.3,<4.0.0)",
 ]
 
 authors = [{name="Romolo Politi", email ="Romolo.Politi@inaf.it" }]
