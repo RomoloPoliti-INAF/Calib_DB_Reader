@@ -20,6 +20,11 @@ loads the referenced matrix or table.
 - CSV product labels resolve the namespaced `pds:logical_identifier` field.
 - `manifest.json` supplies database identity and version metadata.
 
+The 2026-07-20 Calibrator SPICE integration does not alter these contracts.
+Kernel-folder validation and `MetakernelInfo` ownership remain in
+`simbio_cal_core`; CalibDBReader continues to receive only database paths and
+CSV names.
+
 ## Verification
 
 ```bash

@@ -66,6 +66,14 @@ Calibration CSV files are loaded as Polars dataframes. CSV calibration
 products returned with `read_data=True` are also represented as Polars
 dataframes.
 
+## SIMBIO-SYS calibrator integration
+
+SimCal and the HRIC, STC, and VIHI packages configure one instrument database
+root plus its CSV basename. The newer SPICE `kernel_folder` and
+`MetakernelInfo` settings belong to `simbio_cal_core` and do not change this
+reader's database contract. Continue passing the instrument root and
+`sim_<instrument>_cal_db_v1.0.csv` independently.
+
 ## Methods list
 
 ### get_calib

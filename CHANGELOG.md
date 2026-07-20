@@ -4,6 +4,12 @@ All notable changes to CalibDBReader are documented in this file.
 
 ## Unreleased
 
+### Documentation
+
+- Clarify compatibility with the Calibrator-wide kernel-folder and
+  `MetakernelInfo` integration: database roots, indexes, and reader APIs are
+  unchanged.
+
 ## Version 1.2.1 - 2026-07-20
 
 ### Changed
