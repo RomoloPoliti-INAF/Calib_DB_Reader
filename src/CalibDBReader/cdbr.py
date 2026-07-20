@@ -295,18 +295,19 @@ class CalibDB:
                     if pds_label.exists():
                         tree = parse(str(pds_label))
                         ret["LVID"] = getFromXml(tree, "pds:logical_identifier")
-                mtx_temp = np.fromfile(
-                    self.folder.joinpath(ret["File"]), dtype=ret["Type"]
-                )
+                # mtx_temp = np.fromfile(
+                #     self.folder.joinpath(ret["File"]), dtype=ret["Type"]
+                # )
                 # mtx_temp = mtx_temp.reshape(ret["Size"])
-                if "Arrays" in df.columns and ret["Arrays"] != "Null":
-                    mtx = {}
                     info = pds4_tools.read(str(pds_label))
-                    for item in info.structures:
-                        mtx[item.id] = item.data
+                    if "Arrays" in df.columns and ret["Arrays"] != "Null":
+                        mtx = {}
+                        
+                        for item in info.structures:
+                            mtx[item.id] = item.data
 
-                else:
-                    mtx = mtx_temp.reshape(ret["Size"])
+                    else:
+                        mtx = info.structures[0].data #mtx_temp.reshape(ret["Size"])
             ret["Data"] = mtx
         ret["File"] = self.folder.joinpath(ret["File"])
         if return_class:
