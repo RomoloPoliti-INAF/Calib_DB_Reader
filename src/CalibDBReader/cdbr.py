@@ -287,7 +287,7 @@ class CalibDB:
                 pds_label = fileName.with_suffix(".lblx")
                 if pds_label.exists():
                     tree = parse(str(pds_label))
-                    ret["LVID"] = getFromXml(tree, "logical_identifier")
+                    ret["LVID"] = getFromXml(tree, "pds:logical_identifier")
 
             else:
                 if fileName.suffix == ".dat":

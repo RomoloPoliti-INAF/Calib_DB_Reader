@@ -4,6 +4,8 @@ All notable changes to CalibDBReader are documented in this file.
 
 ## Unreleased
 
+## Version 1.2.1 - 2026-07-20
+
 ### Changed
 
 - Accept database names as strings or `Path` objects, with or without the
@@ -14,6 +16,8 @@ All notable changes to CalibDBReader are documented in this file.
 
 - Prevent a configured filename such as `sim_stc_cal_db_v1.0.csv` from being
   expanded to `sim_stc_cal_db_v1.0.csv.csv`.
+- Read the LVID from namespaced PDS4 labels associated with CSV calibration
+  products.
 
 ## Version 1.1.0
 

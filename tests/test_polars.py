@@ -55,6 +55,25 @@ def test_get_calib_returns_polars_csv_data(tmp_path):
     assert calibration["Data"].to_dict(as_series=False) == {"value": [1, 2]}
 
 
+def test_get_calib_reads_lvid_from_namespaced_csv_label(tmp_path):
+    database_path = make_database(tmp_path)
+    (database_path / "matrix.lblx").write_text(
+        '<pds:Product_Ancillary xmlns:pds="http://pds.nasa.gov/pds4/pds/v1">'
+        "<pds:Identification_Area>"
+        "<pds:logical_identifier>urn:test:calibration:matrix</pds:logical_identifier>"
+        "</pds:Identification_Area>"
+        "</pds:Product_Ancillary>",
+        encoding="utf-8",
+    )
+    database = CalibDB(database_path, check_git=False)
+
+    calibration = database.get_calib(
+        "flat", datetime(2025, 1, 1), filter=0, read_data=True
+    )
+
+    assert calibration["LVID"] == "urn:test:calibration:matrix"
+
+
 def test_get_calib_accepts_iso_date_string(tmp_path):
     database = CalibDB(make_database(tmp_path), check_git=False)
 
