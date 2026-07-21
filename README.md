@@ -1,11 +1,13 @@
 # Calibration Database Reader
-![Version 1.2.1](https://img.shields.io/badge/version-1.2.1-blue?style=plastic)
+![Version 1.2.2-dev.1](https://img.shields.io/badge/version-1.2.2--dev.1-blue?style=plastic)
 ![Language Python 3.14](https://img.shields.io/badge/python-3.14-orange?style=plastic&logo=python)
 ![BepiColombo SIMBIO-SYS](https://img.shields.io/badge/BepiColombo-SIMBIO--SYS-blue?style=plastic)
 ![JUICE JANUS](https://img.shields.io/badge/JUICE-JANUS-blue?style=plastic)
 [![DOI](https://zenodo.org/badge/820492051.svg)](https://zenodo.org/doi/10.5281/zenodo.12634122)
 
 This software is able to read the calibration database in a standard format.
+
+Current development version: `1.2.2-dev.1`.
 
 The database consists of three elements:
 - The `version.yml` file, which contains the version number of the database
@@ -65,6 +67,11 @@ db=CalibDB(folder = "../../JANUS/Software/janus_cal_db",
 Calibration CSV files are loaded as Polars dataframes. CSV calibration
 products returned with `read_data=True` are also represented as Polars
 dataframes.
+
+Known reader issues found by the Calibrator-wide audit are tracked with
+`TODO-SIMCAL-010` through `TODO-SIMCAL-012` in `../SimCal/TODO.md`. The source
+contains matching TODO markers; this development increment documents them but
+does not change reader behaviour.
 
 ## SIMBIO-SYS calibrator integration
 

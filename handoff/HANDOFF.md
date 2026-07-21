@@ -1,8 +1,8 @@
 # CalibDBReader handoff
 
-Updated: 2026-07-20
+Updated: 2026-07-21
 
-Current version: `1.2.1`.
+Current development version: `1.2.2-dev.1`.
 
 ## Repository role
 
@@ -34,7 +34,14 @@ uv run pytest -q
 ```
 
 Current verification: 14 tests passed, Ruff passed, and source/wheel builds
-completed for version `1.2.1`.
+completed for version `1.2.2-dev.1`.
 
 The source tree is authoritative. The historical `build/` directory is
 excluded from Ruff and should not be used as an import source.
+
+## Known audit findings
+
+The central register is `../SimCal/TODO.md`. This repository carries markers
+for `TODO-SIMCAL-010` (empty calibration selection), `TODO-SIMCAL-011`
+(relative path containment), and `TODO-SIMCAL-012` (DAT without a sibling
+label). These are documented defects, not changes included in this handoff.

@@ -176,6 +176,7 @@ class CalibDB:
 
     def _calibration_file_path(self, file_value: str) -> Path:
         """Return the effective path for a calibration file."""
+        # TODO(TODO-SIMCAL-011): Reject relative paths that escape the database root.
         relative_path = Path(str(file_value).strip())
         if relative_path.is_absolute():
             raise ValueError(
@@ -266,6 +267,7 @@ class CalibDB:
             print(f"Date mask: {date_mask}")
             print(f"Channel mask: {channel_mask}")
             print(f"Filter mask: {filter_mask}")
+        # TODO(TODO-SIMCAL-010): Raise a domain-specific error when no row matches.
         ret = df.filter(
             module_mask & date_mask & channel_mask & filter_mask
         ).to_dicts()[0]
@@ -291,6 +293,7 @@ class CalibDB:
 
             else:
                 if fileName.suffix == ".dat":
+                    # TODO(TODO-SIMCAL-012): Handle a missing sibling label explicitly.
                     pds_label = fileName.with_suffix(".lblx")
                     if pds_label.exists():
                         tree = parse(str(pds_label))
