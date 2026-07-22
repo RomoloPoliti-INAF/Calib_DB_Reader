@@ -69,7 +69,7 @@ products returned with `read_data=True` are also represented as Polars
 dataframes.
 
 Known reader issues found by the Calibrator-wide audit are tracked with
-`TODO-SIMCAL-010` through `TODO-SIMCAL-012` in `../SimCal/TODO.md`. The source
+`SIMCAL-010` through `SIMCAL-012` in `../SimCal/TODO.md`. The source
 contains matching TODO markers; this development increment documents them but
 does not change reader behaviour.
 

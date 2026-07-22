@@ -12,6 +12,7 @@ All notable changes to CalibDBReader are documented in this file.
 
 ### Documentation
 
+- Adopt the Calibrator-wide `TODO SIMCAL-NNN` open-issue marker convention.
 - Clarify compatibility with the Calibrator-wide kernel-folder and
   `MetakernelInfo` integration: database roots, indexes, and reader APIs are
   unchanged.

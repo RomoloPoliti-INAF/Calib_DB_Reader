@@ -42,6 +42,6 @@ excluded from Ruff and should not be used as an import source.
 ## Known audit findings
 
 The central register is `../SimCal/TODO.md`. This repository carries markers
-for `TODO-SIMCAL-010` (empty calibration selection), `TODO-SIMCAL-011`
-(relative path containment), and `TODO-SIMCAL-012` (DAT without a sibling
+for `SIMCAL-010` (empty calibration selection), `SIMCAL-011`
+(relative path containment), and `SIMCAL-012` (DAT without a sibling
 label). These are documented defects, not changes included in this handoff.
