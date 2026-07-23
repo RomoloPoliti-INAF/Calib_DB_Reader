@@ -7,6 +7,7 @@ All notable changes to CalibDBReader are documented in this file.
 ### Changed
 
 - Advance the development version to `1.2.2-dev.1`.
+- Advance the development version to `1.2.2-dev.2`.
 - Add source markers for audit findings concerning empty query results,
   database-root path containment, and missing PDS labels.
 

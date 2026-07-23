@@ -1,6 +1,6 @@
 [project]
 name = "CalibDBReader"
-version = "1.2.2-dev.1"
+version = "1.2.2-dev.2"
 description = "Reader for the calibration database"
 dependencies = [
     "importlib-metadata",

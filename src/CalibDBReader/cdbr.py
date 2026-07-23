@@ -212,7 +212,7 @@ class CalibDB:
     def get_calib(
         self,
         calibration_step: str,
-        date: datetime,
+        date: datetime | str,
         channel: str = None,
         filter: int = None,
         read_data: bool = False,
@@ -233,8 +233,15 @@ class CalibDB:
             dict: Dictionary with all the information of the calibration file and the data if read_data is True
         """
         df = self.db
+        if date is None:
+            raise ValueError("A product acquisition date is required")
         if isinstance(date, str):
             date = self.convert_date(date)
+        elif not isinstance(date, datetime):
+            raise TypeError(
+                "date must be a datetime or YYYY-MM-DD string, "
+                f"got {type(date).__name__}"
+            )
         if debug:
             print(f"Calibration Step: {calibration_step}")
 

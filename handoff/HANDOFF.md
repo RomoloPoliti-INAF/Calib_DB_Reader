@@ -1,8 +1,8 @@
 # CalibDBReader handoff
 
-Updated: 2026-07-21
+Updated: 2026-07-23
 
-Current development version: `1.2.2-dev.1`.
+Current development version: `1.2.2-dev.2`.
 
 ## Repository role
 
@@ -33,8 +33,8 @@ uv run ruff check .
 uv run pytest -q
 ```
 
-Current verification: 14 tests passed, Ruff passed, and source/wheel builds
-completed for version `1.2.2-dev.1`.
+Current verification: 16 tests passed, Ruff passed, and source/wheel builds
+completed for version `1.2.2-dev.2`.
 
 The source tree is authoritative. The historical `build/` directory is
 excluded from Ruff and should not be used as an import source.

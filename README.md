@@ -1,5 +1,5 @@
 # Calibration Database Reader
-![Version 1.2.2-dev.1](https://img.shields.io/badge/version-1.2.2--dev.1-blue?style=plastic)
+![Version 1.2.2-dev.2](https://img.shields.io/badge/version-1.2.2--dev.2-blue?style=plastic)
 ![Language Python 3.14](https://img.shields.io/badge/python-3.14-orange?style=plastic&logo=python)
 ![BepiColombo SIMBIO-SYS](https://img.shields.io/badge/BepiColombo-SIMBIO--SYS-blue?style=plastic)
 ![JUICE JANUS](https://img.shields.io/badge/JUICE-JANUS-blue?style=plastic)
@@ -7,7 +7,7 @@
 
 This software is able to read the calibration database in a standard format.
 
-Current development version: `1.2.2-dev.1`.
+Current development version: `1.2.2-dev.2`.
 
 The database consists of three elements:
 - The `version.yml` file, which contains the version number of the database

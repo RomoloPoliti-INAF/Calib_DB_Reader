@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 import polars as pl
+import pytest
 
 from CalibDBReader import CalibDB
 
@@ -80,6 +81,20 @@ def test_get_calib_accepts_iso_date_string(tmp_path):
     calibration = database.get_calib("flat", "2025-01-01")
 
     assert calibration["Calibration_Step"] == "flat"
+
+
+def test_get_calib_rejects_missing_date(tmp_path):
+    database = CalibDB(make_database(tmp_path), check_git=False)
+
+    with pytest.raises(ValueError, match="product acquisition date is required"):
+        database.get_calib("flat", None)
+
+
+def test_get_calib_rejects_invalid_date_type(tmp_path):
+    database = CalibDB(make_database(tmp_path), check_git=False)
+
+    with pytest.raises(TypeError, match="datetime or YYYY-MM-DD string"):
+        database.get_calib("flat", 20250101)
 
 
 def test_now_is_converted_to_current_datetime(tmp_path):
