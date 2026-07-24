@@ -9,7 +9,6 @@ import git
 import numpy as np
 import pds4_tools
 import polars as pl
-from myxmltools import getFromXml
 from rich import print
 from semantic_version_tools import Vers
 
@@ -17,6 +16,36 @@ version = Vers(get_version("CalibDBReader"))
 __version__ = version.full()
 
 # __version__ = "0.6.0"
+
+
+def _get_pds_lvid(tree) -> str:
+    """Return the LIDVID from a PDS label, regardless of its XML prefix."""
+    logical_identifier_nodes = tree.getElementsByTagNameNS("*", "logical_identifier")
+    if not logical_identifier_nodes:
+        raise ValueError("Tag 'logical_identifier' not found in PDS label")
+
+    logical_identifier = "".join(
+        child.data
+        for child in logical_identifier_nodes[0].childNodes
+        if child.nodeType in (child.TEXT_NODE, child.CDATA_SECTION_NODE)
+    ).strip()
+    if not logical_identifier:
+        raise ValueError("Tag 'logical_identifier' is empty in PDS label")
+
+    version_nodes = tree.getElementsByTagNameNS("*", "version_id")
+    if not version_nodes:
+        return logical_identifier
+
+    version_id = "".join(
+        child.data
+        for child in version_nodes[0].childNodes
+        if child.nodeType in (child.TEXT_NODE, child.CDATA_SECTION_NODE)
+    ).strip()
+    if not version_id:
+        return logical_identifier
+
+    lid = logical_identifier.split("::", maxsplit=1)[0]
+    return f"{lid}::{version_id}"
 
 
 def is_git_repo(path):
@@ -281,50 +310,57 @@ class CalibDB:
         if "Arrays" in ret and ret["Arrays"] is not None:
             ret["Arrays"] = self.convert_arrays(ret["Arrays"])
         if read_data:
-            fileName = self.folder.joinpath(ret["File"])
-            if fileName.suffix == ".npz":
-                if "Arrays" in df.columns:
+            fileName = self._calibration_file_path(ret["File"])
+            suffix = fileName.suffix.lower()
+            if suffix == ".npz":
+                arrays = ret.get("Arrays")
+                if arrays not in (None, "Null"):
+                    if isinstance(arrays, str):
+                        array_names = [arrays]
+                    else:
+                        array_names = [
+                            item[0] if isinstance(item, list) else item
+                            for item in arrays
+                        ]
                     mtx = {}
                     with np.load(fileName) as data:
-                        for item in ret["Arrays"]:
-                            mtx[item] = data[item]
+                        for array_name in array_names:
+                            mtx[array_name] = data[array_name]
                 else:
                     with np.load(fileName) as data:
                         mtx = data["Data"]
-            elif fileName.suffix == ".csv":
+            elif suffix == ".csv":
                 mtx = pl.read_csv(fileName)
                 pds_label = fileName.with_suffix(".lblx")
                 if pds_label.exists():
                     tree = parse(str(pds_label))
-                    # ret["LVID"] = getFromXml(tree, "pds:logical_identifier")
-                    nodes = tree.getElementsByTagNameNS("*", "logical_identifier")
-                    if not nodes:
-                        raise ValueError("Tag 'logical_identifier' non trovato")
-                    ret["LVID"] = nodes[0].firstChild.data.strip()
-                    version_id=getFromXml(tree,'version_id',0)
-                    partial=ret['LVID'].split('__')
-                    ret['LVID']=f"{partial[0]}::{version_id}"
+                    ret["LVID"] = _get_pds_lvid(tree)
+            elif suffix == ".dat":
+                pds_label = fileName.with_suffix(".lblx")
+                if not pds_label.is_file():
+                    raise FileNotFoundError(f"PDS label '{pds_label}' does not exist")
 
-            else:
-                if fileName.suffix == ".dat":
-                    # TODO SIMCAL-012: Handle a missing sibling label explicitly.
-                    pds_label = fileName.with_suffix(".lblx")
-                    if pds_label.exists():
-                        tree = parse(str(pds_label))
-                        ret["LVID"] = getFromXml(tree, "pds:logical_identifier")
-                # mtx_temp = np.fromfile(
-                #     self.folder.joinpath(ret["File"]), dtype=ret["Type"]
-                # )
-                # mtx_temp = mtx_temp.reshape(ret["Size"])
+                tree = parse(str(pds_label))
+                ret["LVID"] = _get_pds_lvid(tree)
+                try:
                     info = pds4_tools.read(str(pds_label), quiet=True)
-                    if "Arrays" in df.columns and ret["Arrays"] != "Null":
-                        mtx = {}
-                        
-                        for item in info.structures:
-                            mtx[item.id] = item.data
+                except Exception as exc:
+                    raise ValueError(
+                        f"Unable to read data described by PDS label "
+                        f"'{pds_label}': {exc}"
+                    ) from exc
+                if not info.structures:
+                    raise ValueError(
+                        f"PDS label '{pds_label}' contains no data structures"
+                    )
 
-                    else:
-                        mtx = info.structures[0].data #mtx_temp.reshape(ret["Size"])
+                arrays = ret.get("Arrays")
+                if arrays not in (None, "Null"):
+                    mtx = {item.id: item.data for item in info.structures}
+                else:
+                    mtx = info.structures[0].data
+            else:
+                raise ValueError(f"Unsupported calibration file format: '{suffix}'")
             ret["Data"] = mtx
         ret["File"] = self.folder.joinpath(ret["File"])
         if return_class:
