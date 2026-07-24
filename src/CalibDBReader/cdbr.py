@@ -301,6 +301,9 @@ class CalibDB:
                     if not nodes:
                         raise ValueError("Tag 'logical_identifier' non trovato")
                     ret["LVID"] = nodes[0].firstChild.data.strip()
+                    version_id=getFromXml(tree,'version_id',0)
+                    partial=ret['LVID'].split('__')
+                    ret['LVID']=f"{partial[0]}::{version_id}"
 
             else:
                 if fileName.suffix == ".dat":
