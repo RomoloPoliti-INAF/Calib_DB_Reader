@@ -309,7 +309,7 @@ class CalibDB:
                 #     self.folder.joinpath(ret["File"]), dtype=ret["Type"]
                 # )
                 # mtx_temp = mtx_temp.reshape(ret["Size"])
-                    info = pds4_tools.read(str(pds_label))
+                    info = pds4_tools.read(str(pds_label), quiet=True)
                     if "Arrays" in df.columns and ret["Arrays"] != "Null":
                         mtx = {}
                         
