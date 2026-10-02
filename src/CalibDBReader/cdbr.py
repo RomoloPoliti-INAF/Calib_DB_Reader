@@ -48,6 +48,54 @@ def _get_pds_lvid(tree) -> str:
     return f"{lid}::{version_id}"
 
 
+def _text(node) -> str:
+    return "".join(
+        child.data
+        for child in node.childNodes
+        if child.nodeType in (child.TEXT_NODE, child.CDATA_SECTION_NODE)
+    ).strip()
+
+
+def _horizontal_display_directions(tree) -> dict[str, str]:
+    """Map each array's local_identifier to its disp:horizontal_display_direction."""
+    directions = {}
+    for settings in tree.getElementsByTagNameNS("*", "Display_Settings"):
+        references = settings.getElementsByTagNameNS("*", "local_identifier_reference")
+        direction = settings.getElementsByTagNameNS("*", "horizontal_display_direction")
+        if references and direction:
+            directions[_text(references[0])] = _text(direction[0])
+    return directions
+
+
+def _to_sensor_order(structure, directions: dict[str, str], pds_label: Path):
+    """Return a calibration array in detector readout (sensor) order.
+
+    Up to calib DB 1.4 the arrays are stored in sensor order and labelled
+    "Right to Left". From 1.5 (ESA review #88) they are stored in the
+    archived raw images' orientation, mirrored left-right, and labelled
+    "Left to Right": flip the axis named Sample back. The label decides, so
+    every DB version is read the same way; an image array (Line and Sample
+    axes) without Display_Settings is an error rather than a guess.
+    """
+    axes = structure.meta_data.get("Axis_Array", [])
+    if isinstance(axes, dict):
+        axes = [axes]
+    axis_names = [axis["axis_name"] for axis in axes]
+    if "Line" not in axis_names or "Sample" not in axis_names:
+        return structure.data
+
+    local_id = structure.meta_data.get("local_identifier", structure.id)
+    direction = directions.get(local_id)
+    if direction is None:
+        raise ValueError(
+            f"Array '{local_id}' in PDS label '{pds_label}' has no "
+            "Display_Settings: its orientation is unknown"
+        )
+    if direction == "Left to Right":
+        return np.flip(structure.data, axis=axis_names.index("Sample"))
+    return structure.data
+
+
 def is_git_repo(path):
     try:
         _ = git.Repo(path).git_dir
@@ -354,11 +402,15 @@ class CalibDB:
                         f"PDS label '{pds_label}' contains no data structures"
                     )
 
+                directions = _horizontal_display_directions(tree)
                 arrays = ret.get("Arrays")
                 if arrays not in (None, "Null"):
-                    mtx = {item.id: item.data for item in info.structures}
+                    mtx = {
+                        item.id: _to_sensor_order(item, directions, pds_label)
+                        for item in info.structures
+                    }
                 else:
-                    mtx = info.structures[0].data
+                    mtx = _to_sensor_order(info.structures[0], directions, pds_label)
             else:
                 raise ValueError(f"Unsupported calibration file format: '{suffix}'")
             ret["Data"] = mtx
