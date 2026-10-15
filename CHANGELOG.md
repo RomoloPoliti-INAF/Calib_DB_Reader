@@ -4,6 +4,14 @@ All notable changes to CalibDBReader are documented in this file.
 
 ## Unreleased
 
+## [1.2.2-dev.3] - 2026-10-15
+
+### Changed
+
+- Refresh dependency locks and synchronize development environments on Python 3.14.
+- Advance the software version to `1.2.2-dev.3`; generated PDS4 product VID remains `0.1`.
+
+
 ### Changed
 
 - Advance the development version to `1.2.2-dev.1`.
@@ -18,6 +26,11 @@ All notable changes to CalibDBReader are documented in this file.
   `MetakernelInfo` integration: database roots, indexes, and reader APIs are
   unchanged.
 - Reference the detailed cross-repository issue register in `SimCal/TODO.md`.
+
+### Verification
+
+- All 27 local tests pass on Python 3.14.8 after dependency synchronization.
+- Offline lockfile checks and installed dependency consistency checks pass.
 
 ## Version 1.2.1 - 2026-07-20
 

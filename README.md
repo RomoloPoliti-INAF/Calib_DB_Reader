@@ -7,7 +7,7 @@
 
 This software is able to read the calibration database in a standard format.
 
-Current development version: `1.2.2-dev.2`.
+Current version: `1.2.2-dev.3`.
 
 The database consists of three elements:
 - The `version.yml` file, which contains the version number of the database
@@ -114,3 +114,8 @@ The Supported file format are:
 
 - **binary file** 2D or 3D binary matryx
 - **numpy compressed file** nmz file, in this case the *Size* and *Type* fields have only descriptive aim.
+
+## 1.2.2-dev.3 dependency and runtime update
+
+Use Python 3.14 (`uv sync --locked`) with the refreshed dependency lockfile.
+PDS4 generated product versions remain `0.1`; software versions are independent.
