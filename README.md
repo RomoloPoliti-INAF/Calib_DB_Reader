@@ -21,22 +21,26 @@ The database consists of three elements:
 To create the development environment and install all dependencies:
 
 ```console
-$ uv sync
+$ uv sync --locked
 ```
 
 Run commands inside the managed environment with `uv run`, for example:
 
 ```console
-$ uv run pytest
-$ uv run ruff check .
+$ uv run --locked pytest
+$ uv run --locked ruff check .
 ```
+
+uv creates the local `.venv` environment and installs the development group by
+default. After changing dependencies in `pyproject.toml`, run `uv lock` and
+commit both files. Build the wheel and source distribution with `uv build`.
 
 ### via GitHub
 
-To install the package directly from GitHub:
+To install this development branch directly from GitHub into a uv project:
 
 ```console
-$ uv add "CalibDBReader @ git+https://github.com/RomoloPoliti-INAF/Calib_DB_Reader.git"
+$ uv add "CalibDBReader @ git+https://github.com/RomoloPoliti-INAF/Calib_DB_Reader.git@Version_1.0"
 ```
 
 ## Usage
@@ -94,6 +98,37 @@ Returns information about the calibration data and the calibration data that mee
 - **channel (str, optional):** channel to calibrate. Defaults to None.
 - **filter (int, optional):** filter to calibrate. Defaults to None.
 - **read_data (bool, optional):** read the calibration file and add it to the returned dictionary. Defaults to False.
+
+### Data cache
+
+Each `CalibDB` instance caches products loaded with `read_data=True`, including
+their label metadata and sensor orientation. Reuse the same instance inside a
+processing loop: the matching database row is selected on every call, while an
+already loaded product is reused without reading its data or label again.
+Cache entries distinguish the resolved file path, data type, size, and array
+selection. Calls with `read_data=False` neither load nor populate the cache.
+The same behaviour applies to `return_class=True`.
+
+```python
+db = CalibDB(folder="path/to/database", check_git=False)
+for date in acquisition_dates:
+    calib = db.get_calib("flat", date, read_data=True)
+    matrix = calib["Data"]
+```
+
+Cached NumPy arrays are read-only. Use `matrix.copy()` (or
+`calib["Data"][array_name].copy()` for a multi-array product) when a writable
+matrix is needed. Returned dictionaries and Polars DataFrames have independent
+containers, so replacing their entries or columns does not change cached data.
+
+Files and labels are assumed unchanged during processing; changes are not
+detected automatically. After updating them, call `db.clear_cache()` to release
+all cached entries and make the next request read them again. This method does
+not reload the database CSV or manifest; create a new `CalibDB` instance if those
+change. Previously returned data remain valid after clearing the cache.
+
+The cache has no automatic eviction: loaded products remain in memory until
+`clear_cache()` is called or the instance is released.
 
 ## Database Fields
 

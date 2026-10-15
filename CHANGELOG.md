@@ -4,6 +4,14 @@ All notable changes to CalibDBReader are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Cache calibration product data and label metadata per `CalibDB` instance,
+  preserving per-call row selection and PDS sensor orientation.
+- Add `clear_cache()` for explicit invalidation. Cached NumPy arrays are
+  read-only; returned dictionaries and Polars DataFrames have independent
+  containers.
+
 ### Changed
 
 - Advance the development version to `1.2.2-dev.1`.

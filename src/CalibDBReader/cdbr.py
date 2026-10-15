@@ -153,6 +153,7 @@ class CalibDB:
             if database_name.lower().endswith(".csv")
             else f"{database_name}.csv"
         )
+        self._data_cache = {}
         self.check = check
         self.check_git = check_git
         if folder is None:
@@ -280,6 +281,93 @@ class CalibDB:
                     f"Calibration file '{calibration_file}' does not exist"
                 )
 
+    def clear_cache(self) -> None:
+        """Release cached data and labels; subsequent calls read the files again.
+
+        Files are assumed immutable until this method is called. This does not
+        reload the database index or modify data already returned to callers.
+        """
+        self._data_cache.clear()
+
+    def _read_data(self, ret: dict):
+        """Read one calibration product, including orientation and label metadata."""
+        lvid = None
+        fileName = self._calibration_file_path(ret["File"])
+        suffix = fileName.suffix.lower()
+        if suffix == ".npz":
+            arrays = ret.get("Arrays")
+            if arrays not in (None, "Null"):
+                if isinstance(arrays, str):
+                    array_names = [arrays]
+                else:
+                    array_names = [
+                        item[0] if isinstance(item, list) else item for item in arrays
+                    ]
+                mtx = {}
+                with np.load(fileName) as data:
+                    for array_name in array_names:
+                        mtx[array_name] = data[array_name]
+            else:
+                with np.load(fileName) as data:
+                    mtx = data["Data"]
+        elif suffix == ".csv":
+            mtx = pl.read_csv(fileName)
+            pds_label = fileName.with_suffix(".lblx")
+            if pds_label.exists():
+                tree = parse(str(pds_label))
+                lvid = _get_pds_lvid(tree)
+        elif suffix == ".dat":
+            pds_label = fileName.with_suffix(".lblx")
+            if not pds_label.is_file():
+                raise FileNotFoundError(f"PDS label '{pds_label}' does not exist")
+
+            tree = parse(str(pds_label))
+            lvid = _get_pds_lvid(tree)
+            try:
+                info = pds4_tools.read(str(pds_label), quiet=True)
+            except Exception as exc:
+                raise ValueError(
+                    f"Unable to read data described by PDS label '{pds_label}': {exc}"
+                ) from exc
+            if not info.structures:
+                raise ValueError(f"PDS label '{pds_label}' contains no data structures")
+
+            directions = _horizontal_display_directions(tree)
+            arrays = ret.get("Arrays")
+            if arrays not in (None, "Null"):
+                mtx = {
+                    item.id: _to_sensor_order(item, directions, pds_label)
+                    for item in info.structures
+                }
+            else:
+                mtx = _to_sensor_order(info.structures[0], directions, pds_label)
+        else:
+            raise ValueError(f"Unsupported calibration file format: '{suffix}'")
+        return mtx, lvid
+
+    def _load_data(self, ret: dict):
+        """Reuse product data while keeping returned containers independent."""
+        key = (
+            self._calibration_file_path(ret["File"]).resolve(),
+            ret.get("Type"),
+            tuple(ret.get("Size") or ()),
+            json.dumps(ret.get("Arrays")),
+        )
+        if key not in self._data_cache:
+            data, lvid = self._read_data(ret)
+            arrays = data.values() if isinstance(data, dict) else (data,)
+            for array in arrays:
+                if isinstance(array, np.ndarray):
+                    array.setflags(write=False)
+            self._data_cache[key] = data, lvid
+
+        data, lvid = self._data_cache[key]
+        if isinstance(data, dict):
+            data = data.copy()
+        elif isinstance(data, pl.DataFrame):
+            data = data.clone()
+        return data, lvid
+
     def __str__(self):
         return f"CalibDB: {self.version} for {self.instrument}"
 
@@ -304,7 +392,9 @@ class CalibDB:
             date (datetime): acquisition date of the product to calibrate
             channel (str, optional): channel to calibrate. Defaults to None.
             filter (int, optional): filter to calibrate. Defaults to None.
-            read_data (bool, optional): read the calibration file and add it to the returned dictionary. Defaults to False.
+            read_data (bool, optional): load or reuse cached data and label metadata.
+                NumPy arrays are read-only; copy them before modification.
+                Defaults to False. Use clear_cache() after updating product files.
 
         Returns:
             dict: Dictionary with all the information of the calibration file and the data if read_data is True
@@ -358,62 +448,9 @@ class CalibDB:
         if "Arrays" in ret and ret["Arrays"] is not None:
             ret["Arrays"] = self.convert_arrays(ret["Arrays"])
         if read_data:
-            fileName = self._calibration_file_path(ret["File"])
-            suffix = fileName.suffix.lower()
-            if suffix == ".npz":
-                arrays = ret.get("Arrays")
-                if arrays not in (None, "Null"):
-                    if isinstance(arrays, str):
-                        array_names = [arrays]
-                    else:
-                        array_names = [
-                            item[0] if isinstance(item, list) else item
-                            for item in arrays
-                        ]
-                    mtx = {}
-                    with np.load(fileName) as data:
-                        for array_name in array_names:
-                            mtx[array_name] = data[array_name]
-                else:
-                    with np.load(fileName) as data:
-                        mtx = data["Data"]
-            elif suffix == ".csv":
-                mtx = pl.read_csv(fileName)
-                pds_label = fileName.with_suffix(".lblx")
-                if pds_label.exists():
-                    tree = parse(str(pds_label))
-                    ret["LVID"] = _get_pds_lvid(tree)
-            elif suffix == ".dat":
-                pds_label = fileName.with_suffix(".lblx")
-                if not pds_label.is_file():
-                    raise FileNotFoundError(f"PDS label '{pds_label}' does not exist")
-
-                tree = parse(str(pds_label))
-                ret["LVID"] = _get_pds_lvid(tree)
-                try:
-                    info = pds4_tools.read(str(pds_label), quiet=True)
-                except Exception as exc:
-                    raise ValueError(
-                        f"Unable to read data described by PDS label "
-                        f"'{pds_label}': {exc}"
-                    ) from exc
-                if not info.structures:
-                    raise ValueError(
-                        f"PDS label '{pds_label}' contains no data structures"
-                    )
-
-                directions = _horizontal_display_directions(tree)
-                arrays = ret.get("Arrays")
-                if arrays not in (None, "Null"):
-                    mtx = {
-                        item.id: _to_sensor_order(item, directions, pds_label)
-                        for item in info.structures
-                    }
-                else:
-                    mtx = _to_sensor_order(info.structures[0], directions, pds_label)
-            else:
-                raise ValueError(f"Unsupported calibration file format: '{suffix}'")
-            ret["Data"] = mtx
+            ret["Data"], lvid = self._load_data(ret)
+            if lvid is not None:
+                ret["LVID"] = lvid
         ret["File"] = self.folder.joinpath(ret["File"])
         if return_class:
             ret = CalibrationProduct(
