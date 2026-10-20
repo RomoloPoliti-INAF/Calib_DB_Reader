@@ -1,5 +1,5 @@
 # Calibration Database Reader
-![Version 1.2.2-dev.2](https://img.shields.io/badge/version-1.2.2--dev.2-blue?style=plastic)
+![Version 1.2.2-dev.4](https://img.shields.io/badge/version-1.2.2--dev.4-blue?style=plastic)
 ![Language Python 3.14](https://img.shields.io/badge/python-3.14-orange?style=plastic&logo=python)
 ![BepiColombo SIMBIO-SYS](https://img.shields.io/badge/BepiColombo-SIMBIO--SYS-blue?style=plastic)
 ![JUICE JANUS](https://img.shields.io/badge/JUICE-JANUS-blue?style=plastic)
@@ -7,7 +7,7 @@
 
 This software is able to read the calibration database in a standard format.
 
-Current version: `1.2.2-dev.3`.
+Current version: `1.2.2-dev.4`.
 
 The database consists of three elements:
 - The `version.yml` file, which contains the version number of the database
@@ -119,3 +119,9 @@ The Supported file format are:
 
 Use Python 3.14 (`uv sync --locked`) with the refreshed dependency lockfile.
 PDS4 generated product versions remain `0.1`; software versions are independent.
+
+## Release preparation 1.2.2-dev.4
+
+Prepared on 20 October 2026. See [release notes](RELEASE_NOTES.md) for the
+release scope and validation results. This update changes release metadata and
+documentation; it introduces no calibration algorithm changes.

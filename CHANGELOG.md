@@ -4,6 +4,16 @@ All notable changes to CalibDBReader are documented in this file.
 
 ## Unreleased
 
+
+## [1.2.2-dev.4] - 2026-10-20
+
+### Changed
+
+- Advance the package version from `1.2.2-dev.3` to `1.2.2-dev.4` and synchronize workspace
+  dependency versions in the lockfile.
+- Update release documentation and add dedicated release notes.
+- No runtime or calibration algorithm changes are introduced by this release.
+
 ## [1.2.2-dev.3] - 2026-10-15
 
 ### Changed
