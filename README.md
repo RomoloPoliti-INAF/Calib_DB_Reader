@@ -1,5 +1,5 @@
 # Calibration Database Reader
-![Version 1.2.2-dev.4](https://img.shields.io/badge/version-1.2.2--dev.4-blue?style=plastic)
+![Version 1.2.2-dev.5](https://img.shields.io/badge/version-1.2.2--dev.5-blue?style=plastic)
 ![Language Python 3.14](https://img.shields.io/badge/python-3.14-orange?style=plastic&logo=python)
 ![BepiColombo SIMBIO-SYS](https://img.shields.io/badge/BepiColombo-SIMBIO--SYS-blue?style=plastic)
 ![JUICE JANUS](https://img.shields.io/badge/JUICE-JANUS-blue?style=plastic)
@@ -7,7 +7,7 @@
 
 This software is able to read the calibration database in a standard format.
 
-Current version: `1.2.2-dev.4`.
+Current version: `1.2.2-dev.5`.
 
 The database consists of three elements:
 - The `version.yml` file, which contains the version number of the database
@@ -87,13 +87,14 @@ reader's database contract. Continue passing the instrument root and
 
 Returns information about the calibration data and the calibration data that meets the specified conditions.
 
-> CalibDBReader.get_calib(calibration_step: str, date: datetime, channel: str = None, filter: int = None, read_data: bool = False) -> dict
+> CalibDBReader.get_calib(calibration_step: str, date: datetime, channel: str = None, filter: int = None, read_data: bool = False, ..., *, instrument_mode: str | None = None) -> dict
 
 - **calibration_step (str):** name of the calibration module
 - **date (datetime):** acquisition date of the product to calibrate
 - **channel (str, optional):** channel to calibrate. Defaults to None.
 - **filter (int, optional):** filter to calibrate. Defaults to None.
 - **read_data (bool, optional):** read the calibration file and add it to the returned dictionary. Defaults to False.
+- **instrument_mode (str, optional):** exact value of the CSV `Instrument_Mode` column. A mode-specific lookup requires exactly one matching record.
 
 ## Database Fields
 

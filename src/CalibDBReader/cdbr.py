@@ -295,6 +295,8 @@ class CalibDB:
         read_data: bool = False,
         return_class: bool = False,
         debug: bool = False,
+        *,
+        instrument_mode: str | None = None,
     ) -> dict:
         """
         Get the Calibrauion File for a given module, date, channel and filter
@@ -305,6 +307,8 @@ class CalibDB:
             channel (str, optional): channel to calibrate. Defaults to None.
             filter (int, optional): filter to calibrate. Defaults to None.
             read_data (bool, optional): read the calibration file and add it to the returned dictionary. Defaults to False.
+
+            instrument_mode (str, optional): exact value of the Instrument_Mode column.
 
         Returns:
             dict: Dictionary with all the information of the calibration file and the data if read_data is True
@@ -351,10 +355,19 @@ class CalibDB:
             print(f"Date mask: {date_mask}")
             print(f"Channel mask: {channel_mask}")
             print(f"Filter mask: {filter_mask}")
+        matches = df.filter(module_mask & date_mask & channel_mask & filter_mask)
+        if instrument_mode is not None:
+            if "Instrument_Mode" not in df.columns:
+                raise ValueError("Calibration catalog has no Instrument_Mode column")
+            matches = matches.filter(pl.col("Instrument_Mode") == instrument_mode)
+            if matches.height != 1:
+                raise ValueError(
+                    f"Expected one calibration record for step {calibration_step!r}, "
+                    f"channel {channel!r}, date {date}, and mode {instrument_mode!r}. "
+                    f"Found {matches.height}."
+                )
         # TODO SIMCAL-010: Raise a domain-specific error when no row matches.
-        ret = df.filter(
-            module_mask & date_mask & channel_mask & filter_mask
-        ).to_dicts()[0]
+        ret = matches.to_dicts()[0]
         if "Arrays" in ret and ret["Arrays"] is not None:
             ret["Arrays"] = self.convert_arrays(ret["Arrays"])
         if read_data:
@@ -378,7 +391,8 @@ class CalibDB:
                     with np.load(fileName) as data:
                         mtx = data["Data"]
             elif suffix == ".csv":
-                mtx = pl.read_csv(fileName)
+                comment_prefix = "#" if calibration_step == "solar_irradiance" else None
+                mtx = pl.read_csv(fileName, comment_prefix=comment_prefix)
                 pds_label = fileName.with_suffix(".lblx")
                 if pds_label.exists():
                     tree = parse(str(pds_label))

@@ -4,6 +4,11 @@ All notable changes to CalibDBReader are documented in this file.
 
 ## Unreleased
 
+## [1.2.2-dev.5] - 2026-11-09
+
+- Select calibration records by exact `Instrument_Mode` when requested and report missing or ambiguous matches.
+- Read solar irradiance CSV tables with leading comment lines and preserve the calibration product LIDVID.
+
 
 ## [1.2.2-dev.4] - 2026-10-20
 
