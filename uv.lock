@@ -4,7 +4,7 @@ requires-python = ">=3.14, <4.0"
 
 [[package]]
 name = "calibdbreader"
-version = "1.2.2.dev5"
+version = "1.2.2.dev6"
 source = { editable = "." }
 dependencies = [
     { name = "gitpython" },
@@ -35,7 +35,7 @@ requires-dist = [
     { name = "polars", specifier = ">=1.37,<2.0" },
     { name = "pyyaml", specifier = ">=6.0.3,<7.0.0" },
     { name = "rich", specifier = ">=15.0.0,<16.0.0" },
-    { name = "semantic-version-tools", specifier = ">=1.4.1,<2.0.0" },
+    { name = "semantic-version-tools", specifier = ">=1.5.0,<2" },
 ]
 
 [package.metadata.requires-dev]
@@ -412,23 +412,11 @@ wheels = [
 
 [[package]]
 name = "semantic-version-tools"
-version = "1.4.1"
+version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "setuptools" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ca/c8/6940184c1d2bad1de17fdad56563505b37bac0560c41c3229baf55633094/semantic_version_tools-1.4.1.tar.gz", hash = "sha256:301c072a1942cdc96cf2ac8cfffaa398992765b63168140c7d7f119b74e2e231", size = 3032, upload-time = "2026-01-23T11:34:13.28Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2c/5c/9d1f3219aa2239347fae8031035dee8d04cabb4a819b70f173e2ec224fa4/semantic_version_tools-1.5.0.tar.gz", hash = "sha256:8f6eca05157552f6901b8c19ba42e41979e36e964bef4450f8dbc19de2d8deff", size = 3923, upload-time = "2026-11-09T12:31:37.88Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ee/9d/ccf2a6da81417385ebff5ab2eddc82a5af5e37a0a7ba7250f980397909b3/semantic_version_tools-1.4.1-py3-none-any.whl", hash = "sha256:02e3806f3ccb213698f011799c1fded2fa20b7f5fb680e529829090a0d3b940b", size = 3771, upload-time = "2026-01-23T11:34:16.653Z" },
-]
-
-[[package]]
-name = "setuptools"
-version = "80.10.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/76/95/faf61eb8363f26aa7e1d762267a8d602a1b26d4f3a1e758e92cb3cb8b054/setuptools-80.10.2.tar.gz", hash = "sha256:8b0e9d10c784bf7d262c4e5ec5d4ec94127ce206e8738f29a437945fbc219b70", size = 1200343, upload-time = "2026-01-25T22:38:17.252Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/94/b8/f1f62a5e3c0ad2ff1d189590bfa4c46b4f3b6e49cef6f26c6ee4e575394d/setuptools-80.10.2-py3-none-any.whl", hash = "sha256:95b30ddfb717250edb492926c92b5221f7ef3fbcc2b07579bcd4a27da21d0173", size = 1064234, upload-time = "2026-01-25T22:38:15.216Z" },
+    { url = "https://files.pythonhosted.org/packages/50/7a/1ec1c0fbcb8b668a732fc68fba3b499d877c0300924bfd30a7966b61c50d/semantic_version_tools-1.5.0-py3-none-any.whl", hash = "sha256:0b11413cf61f189a59055f48356ccde4a5776e242ed6b68b3a1f57d0f1297407", size = 3946, upload-time = "2026-11-09T12:31:36.992Z" },
 ]
 
 [[package]]

@@ -1,6 +1,6 @@
 import json
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, field, fields
+from datetime import UTC, datetime
 from importlib.metadata import version as get_version
 from pathlib import Path
 from xml.dom.minidom import parse
@@ -12,8 +12,9 @@ import polars as pl
 from rich import print
 from semantic_version_tools import Vers
 
-version = Vers(get_version("CalibDBReader"))
-__version__ = version.full()
+__version__ = Vers(get_version("CalibDBReader")).full()
+
+NPZ_PLACEHOLDER_LIDVID = "urn:placeholder:calibration:npz::0.0"
 
 # __version__ = "0.6.0"
 
@@ -119,6 +120,20 @@ class CalibrationProduct:
     arrays: list[str] | str | None = None
     data: np.ndarray | dict[str, np.ndarray] | pl.DataFrame | None = None
     lvid: str | None = None
+    instrument_mode: str | None = None
+    extra_metadata: dict[str, object] = field(default_factory=dict)
+
+    def __getattr__(self, name: str) -> object:
+        metadata = self.__dict__.get("extra_metadata", {})
+        if name in metadata:
+            return metadata[name]
+        matches = [
+            value for column, value in metadata.items()
+            if column.casefold().replace(" ", "_") == name
+        ]
+        if len(matches) == 1:
+            return matches[0]
+        raise AttributeError(name)
 
 
 class CalibDB:
@@ -187,10 +202,10 @@ class CalibDB:
         return datetime.strptime(value, "%Y-%m-%d")
 
     def convert_date_now(self, value: str) -> datetime:
-        """Convert the end date field to a datetime object, if the value is 'Now' return the current time"""
+        """Return the last second of the UTC end date, or the current UTC time."""
         if value == "Now":
-            return datetime.now()
-        return self.convert_date(value)
+            return datetime.now(UTC).replace(tzinfo=None)
+        return self.convert_date(value).replace(hour=23, minute=59, second=59)
 
     def convert_filter(self, value: str) -> int:
         """Convert the filter field to an integer, if the value is 'all' return 0"""
@@ -231,6 +246,7 @@ class CalibDB:
                 f"{db_file} does not exist. Not a valid calib_db folder"
             )
         self.db = pl.read_csv(db_file, infer_schema=False)
+        self._now_rows = (self.db["End"] == "Now").fill_null(False)
         self.db = self.db.with_columns(
             pl.col("Size").str.split("-").list.eval(pl.element().cast(pl.Int64)),
             pl.col("Start").str.strptime(pl.Datetime, format="%Y-%m-%d"),
@@ -251,16 +267,40 @@ class CalibDB:
         if self.check:
             self._check_calibration_files()
 
+    def update_now(self) -> None:
+        """Refresh the end time of catalog rows declared as Now."""
+        now = self.convert_date_now("Now")
+        self.db = self.db.with_columns(
+            pl.when(self._now_rows).then(pl.lit(now)).otherwise(pl.col("End")).alias("End")
+        )
+
     def _calibration_file_path(self, file_value: str) -> Path:
         """Return the effective path for a calibration file."""
-        # TODO SIMCAL-011: Reject relative paths that escape the database root.
         relative_path = Path(str(file_value).strip())
         if relative_path.is_absolute():
             raise ValueError(
                 f"Calibration file path '{file_value}' must be relative to "
                 f"'{self.folder}'"
             )
-        return self.folder / relative_path
+        return self._check_database_path(self.folder / relative_path)
+
+    def _check_database_path(self, path: Path) -> Path:
+        if not path.resolve().is_relative_to(self.folder.resolve()):
+            raise ValueError(f"Calibration path '{path}' is outside the database directory")
+        return path
+
+    def _read_dat_label(self, payload: Path, label: Path):
+        if not label.is_file():
+            raise FileNotFoundError(f"PDS label '{label}' does not exist")
+
+        tree = parse(str(label))
+        file_nodes = tree.getElementsByTagNameNS("*", "file_name")
+        if not file_nodes or any(
+            (label.parent / _text(node)).resolve() != payload.resolve()
+            for node in file_nodes
+        ):
+            raise ValueError(f"PDS label '{label}' must reference '{payload.name}'")
+        return tree
 
     def _check_calibration_files(self) -> None:
         """Verify all files referenced by the calibration database."""
@@ -279,6 +319,10 @@ class CalibDB:
                 raise FileNotFoundError(
                     f"Calibration file '{calibration_file}' does not exist"
                 )
+
+            if calibration_file.suffix.lower() == ".dat":
+                label = self._check_database_path(calibration_file.with_suffix(".lblx"))
+                self._read_dat_label(calibration_file, label)
 
     def __str__(self):
         return f"CalibDB: {self.version} for {self.instrument}"
@@ -303,7 +347,7 @@ class CalibDB:
 
         Args:
             calibration_step (str): name of the calibration module
-            date (datetime): acquisition date of the product to calibrate
+            date (datetime | str): acquisition date. Values without a timezone are UTC.
             channel (str, optional): channel to calibrate. Defaults to None.
             filter (int, optional): filter to calibrate. Defaults to None.
             read_data (bool, optional): read the calibration file and add it to the returned dictionary. Defaults to False.
@@ -323,6 +367,10 @@ class CalibDB:
                 "date must be a datetime or YYYY-MM-DD string, "
                 f"got {type(date).__name__}"
             )
+        # Catalog timestamps omit the timezone and represent UTC.
+        if date.utcoffset() is not None:
+            date = date.astimezone(UTC).replace(tzinfo=None)
+
         if debug:
             print(f"Calibration Step: {calibration_step}")
 
@@ -336,14 +384,18 @@ class CalibDB:
 
         date_mask = (df["Start"] <= date) & (df["End"] >= date)
 
-        if "Channel" in df.columns and channel is not None:
+        if channel is not None:
+            if "Channel" not in df.columns:
+                raise ValueError("Calibration catalog has no Channel column")
             channel_mask = df["Channel"] == channel
         else:
             channel_mask = True
         if debug:
             print(f"Filtering on channel: {channel}")
 
-        if "Filter" in df.columns and filter is not None:
+        if filter is not None:
+            if "Filter" not in df.columns:
+                raise ValueError("Calibration catalog has no Filter column")
             filter_mask = df["Filter"] == filter
         else:
             filter_mask = True
@@ -360,19 +412,34 @@ class CalibDB:
             if "Instrument_Mode" not in df.columns:
                 raise ValueError("Calibration catalog has no Instrument_Mode column")
             matches = matches.filter(pl.col("Instrument_Mode") == instrument_mode)
-            if matches.height != 1:
-                raise ValueError(
-                    f"Expected one calibration record for step {calibration_step!r}, "
-                    f"channel {channel!r}, date {date}, and mode {instrument_mode!r}. "
-                    f"Found {matches.height}."
-                )
-        # TODO SIMCAL-010: Raise a domain-specific error when no row matches.
-        ret = matches.to_dicts()[0]
+        if matches.height > 1:
+            raise ValueError(
+                f"Ambiguous calibration lookup for step {calibration_step!r}, "
+                f"date {date} UTC, channel {channel!r}, filter {filter!r}, "
+                f"and mode {instrument_mode!r}. Found {matches.height} records."
+            )
+        if matches.is_empty():
+            raise ValueError(
+                f"No calibration record for step {calibration_step!r}, "
+                f"date {date} UTC, channel {channel!r}, filter {filter!r}, "
+                f"and mode {instrument_mode!r}."
+            )
+        ret = matches.row(0, named=True)
         if "Arrays" in ret and ret["Arrays"] is not None:
             ret["Arrays"] = self.convert_arrays(ret["Arrays"])
+        fileName = self._calibration_file_path(ret["File"])
+        suffix = fileName.suffix.lower()
+        if suffix == ".npz":
+            ret["LVID"] = NPZ_PLACEHOLDER_LIDVID
+        elif suffix in {".csv", ".dat"}:
+            pds_label = self._check_database_path(fileName.with_suffix(".lblx"))
+            if suffix == ".dat" and (read_data or pds_label.is_file()):
+                tree = self._read_dat_label(fileName, pds_label)
+                ret["LVID"] = _get_pds_lvid(tree)
+            elif pds_label.is_file():
+                ret["LVID"] = _get_pds_lvid(parse(str(pds_label)))
+
         if read_data:
-            fileName = self._calibration_file_path(ret["File"])
-            suffix = fileName.suffix.lower()
             if suffix == ".npz":
                 arrays = ret.get("Arrays")
                 if arrays not in (None, "Null"):
@@ -393,17 +460,7 @@ class CalibDB:
             elif suffix == ".csv":
                 comment_prefix = "#" if calibration_step == "solar_irradiance" else None
                 mtx = pl.read_csv(fileName, comment_prefix=comment_prefix)
-                pds_label = fileName.with_suffix(".lblx")
-                if pds_label.exists():
-                    tree = parse(str(pds_label))
-                    ret["LVID"] = _get_pds_lvid(tree)
             elif suffix == ".dat":
-                pds_label = fileName.with_suffix(".lblx")
-                if not pds_label.is_file():
-                    raise FileNotFoundError(f"PDS label '{pds_label}' does not exist")
-
-                tree = parse(str(pds_label))
-                ret["LVID"] = _get_pds_lvid(tree)
                 try:
                     info = pds4_tools.read(str(pds_label), quiet=True)
                 except Exception as exc:
@@ -425,11 +482,33 @@ class CalibDB:
                     }
                 else:
                     mtx = _to_sensor_order(info.structures[0], directions, pds_label)
+                matrices = mtx.values() if isinstance(mtx, dict) else (mtx,)
+                expected_size = ret.get("Size")
+                expected_type = ret.get("Type")
+                for matrix in matrices:
+                    if expected_size is not None and matrix.shape != tuple(expected_size):
+                        raise ValueError(
+                            f"Calibration file '{fileName}' has shape {matrix.shape}, "
+                            f"expected {tuple(expected_size)} from CSV Size"
+                        )
+                    if expected_type is not None and (
+                        matrix.dtype.newbyteorder("=")
+                        != np.dtype(expected_type).newbyteorder("=")
+                    ):
+                        raise ValueError(
+                            f"Calibration file '{fileName}' has dtype {matrix.dtype}, "
+                            f"expected {expected_type} from CSV Type"
+                        )
             else:
                 raise ValueError(f"Unsupported calibration file format: '{suffix}'")
             ret["Data"] = mtx
-        ret["File"] = self.folder.joinpath(ret["File"])
+        ret["File"] = fileName
         if return_class:
+            standard_columns = {"LVID"} | {
+                item.name.title()
+                for item in fields(CalibrationProduct)
+                if item.name not in {"extra_metadata", "lvid"}
+            }
             ret = CalibrationProduct(
                 calibration_step=ret["Calibration_Step"],
                 start=ret["Start"],
@@ -442,6 +521,12 @@ class CalibDB:
                 arrays=ret.get("Arrays", None),
                 data=ret.get("Data", None),
                 lvid=ret.get("LVID", None),
+                instrument_mode=ret.get("Instrument_Mode"),
+                extra_metadata={
+                    column: value
+                    for column, value in ret.items()
+                    if column not in standard_columns
+                },
             )
 
         return ret

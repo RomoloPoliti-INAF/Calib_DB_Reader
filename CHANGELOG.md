@@ -4,6 +4,12 @@ All notable changes to CalibDBReader are documented in this file.
 
 ## Unreleased
 
+## [1.2.2-dev.6] - 2026-11-11
+
+- Normalize acquisition dates to UTC, treat catalog end dates as inclusive, and refresh rows declared as Now.
+- Reject ambiguous lookups and paths outside the calibration database. Validate DAT labels and payloads.
+- Expose catalog metadata and source LIDVIDs, and require semantic-version-tools 1.5 or later.
+
 ## [1.2.2-dev.5] - 2026-11-09
 
 - Select calibration records by exact `Instrument_Mode` when requested and report missing or ambiguous matches.

@@ -94,7 +94,16 @@ Returns information about the calibration data and the calibration data that mee
 - **channel (str, optional):** channel to calibrate. Defaults to None.
 - **filter (int, optional):** filter to calibrate. Defaults to None.
 - **read_data (bool, optional):** read the calibration file and add it to the returned dictionary. Defaults to False.
-- **instrument_mode (str, optional):** exact value of the CSV `Instrument_Mode` column. A mode-specific lookup requires exactly one matching record.
+- **instrument_mode (str, optional):** exact value of the CSV `Instrument_Mode` column. A lookup requires exactly one matching record.
+
+A supplied channel, filter or instrument mode requires the corresponding CSV
+column. A lookup with zero or multiple matches raises `ValueError` with the criteria.
+
+Catalog dates are UTC and omit the timezone in the CSV. Acquisition
+datetimes with an offset are converted to UTC before matching. Naive
+datetimes and date strings are interpreted as UTC. A calendar date in
+`End` is inclusive through `23:59:59 UTC` on that day. Call
+`database.update_now()` to refresh entries declared as `End=Now`.
 
 ## Database Fields
 
@@ -111,6 +120,13 @@ Returns information about the calibration data and the calibration data that mee
 - **File** is the path and the the name of the file containing the matrix.
 - **Arrays** is the name of the matrices in the npz file. If the field is not present the software will try to extract one matrix named *data*
 
+DAT and CSV records with a companion PDS4 label expose its source LIDVID
+independently of `read_data`.
+
+NPZ records return `urn:placeholder:calibration:npz::0.0` as `LVID`
+(`lvid` with `return_class=True`). This shared placeholder indicates that
+the file has no PDS4 product identity.
+
 The Supported file format are:
 
 - **binary file** 2D or 3D binary matryx
@@ -126,3 +142,22 @@ PDS4 generated product versions remain `0.1`; software versions are independent.
 Prepared on 20 October 2026. See [release notes](RELEASE_NOTES.md) for the
 release scope and validation results. This update changes release metadata and
 documentation; it introduces no calibration algorithm changes.
+
+
+With `return_class=True`, additional catalog columns are available in
+`CalibrationProduct.extra_metadata` under their original CSV header names.
+They are also accessible as attributes using lowercase names with spaces
+replaced by underscores, for example `product.detector_temperature`.
+Built-in attributes retain precedence, and ambiguous names can be accessed
+by their exact header in `extra_metadata`.
+
+
+Calibration payload and label paths must resolve inside the database
+directory. This also applies to symbolic links and to files referenced by
+DAT labels.
+
+
+For DAT products, `check=True` requires a companion PDS4 label that references
+the indexed payload. When loading data, array shapes and numeric types must
+match the catalog's `Size` and `Type` when specified. The label controls byte
+order.
