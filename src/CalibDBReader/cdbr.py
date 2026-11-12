@@ -9,11 +9,13 @@ import git
 import numpy as np
 import pds4_tools
 import polars as pl
+import yaml
 from rich import print
 from semantic_version_tools import Vers
 
 __version__ = Vers(get_version("CalibDBReader")).full()
 
+NPY_PLACEHOLDER_LIDVID = "urn:placeholder:calibration:npy::0.0"
 NPZ_PLACEHOLDER_LIDVID = "urn:placeholder:calibration:npz::0.0"
 
 # __version__ = "0.6.0"
@@ -113,7 +115,7 @@ class CalibrationProduct:
     start: datetime
     end: datetime
     channel: str | None = None
-    filter: int | None = None
+    filter: int | str | None = None
     file: Path | None = None
     type: str | None = None
     size: list[int] | None = None
@@ -239,7 +241,7 @@ class CalibDB:
         return value
 
     def _datainit(self, folder):
-        """Load the dabase from the CSV file and the version from the version.yml file"""
+        """Load the catalog CSV and its version metadata."""
         db_file = folder.joinpath(self.dbname)
         if not db_file.exists():
             raise FileNotFoundError(
@@ -253,15 +255,22 @@ class CalibDB:
             pl.col("End").map_elements(self.convert_date_now, return_dtype=pl.Datetime),
         )
         if "Filter" in self.db.columns:
-            self.db = self.db.with_columns(
-                pl.col("Filter").replace("all", "0").cast(pl.Int64)
-            )
+            filters = self.db["Filter"].replace("all", "0")
+            numeric_filters = filters.cast(pl.Int64, strict=False)
+            if numeric_filters.null_count() == filters.null_count():
+                self.db = self.db.with_columns(numeric_filters.alias("Filter"))
+            else:
+                self.db = self.db.with_columns(filters.alias("Filter"))
         manifest_file = folder / "manifest.json"
-        if not manifest_file.is_file():
+        legacy_metadata = folder / "version.yml"
+        if manifest_file.is_file():
+            manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+        elif legacy_metadata.is_file():
+            manifest = yaml.safe_load(legacy_metadata.read_text(encoding="utf-8"))
+        else:
             raise FileNotFoundError(
                 f"{manifest_file} does not exist. Not a valid calib_db folder"
             )
-        manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
         self.version = manifest["version"]
         self.instrument = manifest["instrument"]
         if self.check:
@@ -335,12 +344,17 @@ class CalibDB:
         calibration_step: str,
         date: datetime | str,
         channel: str = None,
-        filter: int = None,
+        filter: int | str | None = None,
         read_data: bool = False,
         return_class: bool = False,
         debug: bool = False,
         *,
         instrument_mode: str | None = None,
+        temperature: float | None = None,
+        ibr: int | None = None,
+        rt_mode: str | None = None,
+        it: float | None = None,
+        it_tol: float = 1e-6,
     ) -> dict:
         """
         Get the Calibrauion File for a given module, date, channel and filter
@@ -349,7 +363,7 @@ class CalibDB:
             calibration_step (str): name of the calibration module
             date (datetime | str): acquisition date. Values without a timezone are UTC.
             channel (str, optional): channel to calibrate. Defaults to None.
-            filter (int, optional): filter to calibrate. Defaults to None.
+            filter (int | str, optional): filter to calibrate. Defaults to None.
             read_data (bool, optional): read the calibration file and add it to the returned dictionary. Defaults to False.
 
             instrument_mode (str, optional): exact value of the Instrument_Mode column.
@@ -396,7 +410,8 @@ class CalibDB:
         if filter is not None:
             if "Filter" not in df.columns:
                 raise ValueError("Calibration catalog has no Filter column")
-            filter_mask = df["Filter"] == filter
+            filter_value = str(filter) if df.schema["Filter"] == pl.String else filter
+            filter_mask = df["Filter"] == filter_value
         else:
             filter_mask = True
         if debug:
@@ -412,17 +427,36 @@ class CalibDB:
             if "Instrument_Mode" not in df.columns:
                 raise ValueError("Calibration catalog has no Instrument_Mode column")
             matches = matches.filter(pl.col("Instrument_Mode") == instrument_mode)
+        criteria = {
+            "Temperature": temperature,
+            "IBR": ibr,
+            "RT_Mode": rt_mode,
+            "IT": it,
+        }
+        for column, value in criteria.items():
+            if value is None:
+                continue
+            if column not in df.columns:
+                raise ValueError(f"Calibration catalog has no {column} column")
+            field_value = pl.col(column)
+            if column == "IT":
+                condition = (field_value.cast(pl.Float64, strict=False) - value).abs() <= it_tol
+            elif column in ("Temperature", "IBR"):
+                condition = field_value.cast(pl.Float64, strict=False) == value
+            else:
+                condition = field_value == value
+            matches = matches.filter(condition)
         if matches.height > 1:
             raise ValueError(
                 f"Ambiguous calibration lookup for step {calibration_step!r}, "
                 f"date {date} UTC, channel {channel!r}, filter {filter!r}, "
-                f"and mode {instrument_mode!r}. Found {matches.height} records."
+                f"mode {instrument_mode!r}, and STC criteria {criteria}. Found {matches.height} records."
             )
         if matches.is_empty():
             raise ValueError(
                 f"No calibration record for step {calibration_step!r}, "
                 f"date {date} UTC, channel {channel!r}, filter {filter!r}, "
-                f"and mode {instrument_mode!r}."
+                f"mode {instrument_mode!r}, and STC criteria {criteria}."
             )
         ret = matches.row(0, named=True)
         if "Arrays" in ret and ret["Arrays"] is not None:
@@ -431,13 +465,15 @@ class CalibDB:
         suffix = fileName.suffix.lower()
         if suffix == ".npz":
             ret["LVID"] = NPZ_PLACEHOLDER_LIDVID
-        elif suffix in {".csv", ".dat"}:
+        elif suffix in {".csv", ".dat", ".npy"}:
             pds_label = self._check_database_path(fileName.with_suffix(".lblx"))
             if suffix == ".dat" and (read_data or pds_label.is_file()):
                 tree = self._read_dat_label(fileName, pds_label)
                 ret["LVID"] = _get_pds_lvid(tree)
             elif pds_label.is_file():
                 ret["LVID"] = _get_pds_lvid(parse(str(pds_label)))
+            elif suffix == ".npy" and not ret.get("LVID"):
+                ret["LVID"] = NPY_PLACEHOLDER_LIDVID
 
         if read_data:
             if suffix == ".npz":
@@ -457,6 +493,8 @@ class CalibDB:
                 else:
                     with np.load(fileName) as data:
                         mtx = data["Data"]
+            elif suffix == ".npy":
+                mtx = np.load(fileName, allow_pickle=False)
             elif suffix == ".csv":
                 comment_prefix = "#" if calibration_step == "solar_irradiance" else None
                 mtx = pl.read_csv(fileName, comment_prefix=comment_prefix)

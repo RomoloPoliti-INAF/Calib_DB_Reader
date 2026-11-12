@@ -4,6 +4,10 @@ All notable changes to CalibDBReader are documented in this file.
 
 ## Unreleased
 
+## [1.2.2-dev.7] - 2026-11-12
+
+- Read STC calibration catalogs with named filters, legacy metadata and timing and temperature selectors.
+
 - Add the `dbdisplay` command to show a calibration catalog CSV as a terminal
   table. Use `--check` to show whether each referenced file exists.
 

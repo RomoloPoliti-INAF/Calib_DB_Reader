@@ -1,5 +1,5 @@
 # Calibration Database Reader
-![Version 1.2.2-dev.6](https://img.shields.io/badge/version-1.2.2--dev.6-blue?style=plastic)
+![Version 1.2.2-dev.7](https://img.shields.io/badge/version-1.2.2--dev.7-blue?style=plastic)
 ![Language Python 3.14](https://img.shields.io/badge/python-3.14-orange?style=plastic&logo=python)
 ![BepiColombo SIMBIO-SYS](https://img.shields.io/badge/BepiColombo-SIMBIO--SYS-blue?style=plastic)
 ![JUICE JANUS](https://img.shields.io/badge/JUICE-JANUS-blue?style=plastic)
@@ -7,7 +7,7 @@
 
 This software is able to read the calibration database in a standard format.
 
-Current version: `1.2.2-dev.6`.
+Current version: `1.2.2-dev.7`.
 
 The database consists of three elements:
 - The `manifest.json` file, which contains the instrument and database version

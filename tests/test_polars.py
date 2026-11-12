@@ -141,6 +141,28 @@ def test_get_calib_reads_single_named_npz_array(tmp_path):
     assert database.get_calib("flat", "2025-01-01", return_class=True).lvid == placeholder
 
 
+def test_get_calib_npy_uses_placeholder_until_pds_label_is_available(tmp_path):
+    folder = make_database(tmp_path)
+    np.save(folder / "matrix.npy", np.array([1.0, 2.0]))
+    catalog = folder / "calib_db.csv"
+    catalog.write_text(catalog.read_text().replace("matrix.csv", "matrix.npy"))
+    database = CalibDB(folder, check_git=False)
+
+    calibration = database.get_calib("flat", "2025-01-01", read_data=True)
+
+    np.testing.assert_array_equal(calibration["Data"], [1.0, 2.0])
+    assert calibration["LVID"] == "urn:placeholder:calibration:npy::0.0"
+    assert database.get_calib("flat", "2025-01-01", return_class=True).lvid == calibration["LVID"]
+
+    (folder / "matrix.lblx").write_text(
+        "<Product_Observational><Identification_Area>"
+        "<logical_identifier>urn:esa:pds:test:matrix</logical_identifier>"
+        "<version_id>1.0</version_id>"
+        "</Identification_Area></Product_Observational>"
+    )
+    assert database.get_calib("flat", "2025-01-01")["LVID"] == "urn:esa:pds:test:matrix::1.0"
+
+
 def test_get_calib_reports_missing_dat_label(tmp_path):
     database_path = make_database(tmp_path)
     (database_path / "matrix.dat").write_bytes(b"\x00")
