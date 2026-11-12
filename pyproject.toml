@@ -24,6 +24,9 @@ keywords = ["Space Mission", "BepiColombo", "SIMBIO_SYS", "Calibration Database"
 Repository = "https://github.com/RomoloPoliti-INAF/Calib_DB_Reader"
 Changelog = "https://github.com/RomoloPoliti-INAF/Calib_DB_Reader/CHANGELOG.md"
 
+[project.scripts]
+dbdisplay = "CalibDBReader.cli:main"
+
 [build-system]
 requires = ["uv_build>=0.11.26,<0.12"]
 build-backend = "uv_build"

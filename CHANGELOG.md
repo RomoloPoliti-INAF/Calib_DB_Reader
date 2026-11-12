@@ -4,6 +4,9 @@ All notable changes to CalibDBReader are documented in this file.
 
 ## Unreleased
 
+- Add the `dbdisplay` command to show a calibration catalog CSV as a terminal
+  table. Use `--check` to show whether each referenced file exists.
+
 ## [1.2.2-dev.6] - 2026-11-11
 
 - Normalize acquisition dates to UTC, treat catalog end dates as inclusive, and refresh rows declared as Now.

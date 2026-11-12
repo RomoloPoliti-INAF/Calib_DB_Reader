@@ -1,5 +1,5 @@
 # Calibration Database Reader
-![Version 1.2.2-dev.5](https://img.shields.io/badge/version-1.2.2--dev.5-blue?style=plastic)
+![Version 1.2.2-dev.6](https://img.shields.io/badge/version-1.2.2--dev.6-blue?style=plastic)
 ![Language Python 3.14](https://img.shields.io/badge/python-3.14-orange?style=plastic&logo=python)
 ![BepiColombo SIMBIO-SYS](https://img.shields.io/badge/BepiColombo-SIMBIO--SYS-blue?style=plastic)
 ![JUICE JANUS](https://img.shields.io/badge/JUICE-JANUS-blue?style=plastic)
@@ -7,10 +7,10 @@
 
 This software is able to read the calibration database in a standard format.
 
-Current version: `1.2.2-dev.5`.
+Current version: `1.2.2-dev.6`.
 
 The database consists of three elements:
-- The `version.yml` file, which contains the version number of the database
+- The `manifest.json` file, which contains the instrument and database version
 - The `calib_db.csv` file, which contains information about the calibration data and their scope of applicability (see the specific [section](#database-fields) for details)
 - The `data` folder, which contains the calibration matrices
 
@@ -40,6 +40,23 @@ $ uv add "CalibDBReader @ git+https://github.com/RomoloPoliti-INAF/Calib_DB_Read
 ```
 
 ## Usage
+
+### Command line
+
+Pass the path to the calibration catalog CSV to display its rows in the terminal.
+
+```console
+$ uv run dbdisplay ../simbio_calib_db/vihi/sim_vihi_cal_db_v1.0.csv
+$ uv run dbdisplay --check ../simbio_calib_db/stc/sim_stc_cal_db_v2.0.csv
+```
+
+Add `--check` to show whether each file in the `File` column exists relative to
+the CSV directory. The command displays catalog metadata without loading the
+calibration products. If the package is installed, invoke `dbdisplay` directly.
+Run `dbdisplay --help` for command syntax. An unreadable, empty, or invalid
+catalog produces an error and a nonzero exit status.
+
+### Python API
 
 > CalibDB(folder, remote=None, check_git=True, dbname="calib_db", check=False)
 
