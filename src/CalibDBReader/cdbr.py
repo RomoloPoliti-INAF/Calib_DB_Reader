@@ -355,9 +355,13 @@ class CalibDB:
         rt_mode: str | None = None,
         it: float | None = None,
         it_tol: float = 1e-6,
+        allow_pickle: bool = False,
     ) -> dict:
         """
-        Get the Calibrauion File for a given module, date, channel and filter
+        Get the Calibrauion File for a given module, date, channel and filter.
+
+        Set allow_pickle=True only for trusted legacy NPZ calibration archives
+        containing object arrays. Numeric archives use the default False.
 
         Args:
             calibration_step (str): name of the calibration module
@@ -487,11 +491,11 @@ class CalibDB:
                             for item in arrays
                         ]
                     mtx = {}
-                    with np.load(fileName) as data:
+                    with np.load(fileName, allow_pickle=allow_pickle) as data:
                         for array_name in array_names:
                             mtx[array_name] = data[array_name]
                 else:
-                    with np.load(fileName) as data:
+                    with np.load(fileName, allow_pickle=allow_pickle) as data:
                         mtx = data["Data"]
             elif suffix == ".npy":
                 mtx = np.load(fileName, allow_pickle=False)
