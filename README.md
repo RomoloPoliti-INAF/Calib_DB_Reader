@@ -1,5 +1,5 @@
 # Calibration Database Reader
-![Version 1.2.2-dev.7](https://img.shields.io/badge/version-1.2.2--dev.7-blue?style=plastic)
+![Version 1.2.2-dev.8](https://img.shields.io/badge/version-1.2.2--dev.8-blue?style=plastic)
 ![Language Python 3.14](https://img.shields.io/badge/python-3.14-orange?style=plastic&logo=python)
 ![BepiColombo SIMBIO-SYS](https://img.shields.io/badge/BepiColombo-SIMBIO--SYS-blue?style=plastic)
 ![JUICE JANUS](https://img.shields.io/badge/JUICE-JANUS-blue?style=plastic)
@@ -7,7 +7,7 @@
 
 This software is able to read the calibration database in a standard format.
 
-Current version: `1.2.2-dev.7`.
+Current version: `1.2.2-dev.8`.
 
 The database consists of three elements:
 - The `manifest.json` file, which contains the instrument and database version
@@ -100,6 +100,12 @@ reader's database contract. Continue passing the instrument root and
 
 ## Methods list
 
+For a channel-wide CSV calibration, omit the filter selector. For example,
+`db.get_calib("distortion", date="2026-09-16", channel="HRIC", read_data=True)`
+selects the HRIC distortion record valid on the acquisition date. The returned
+dictionary contains the resolved path in `File` and a Polars DataFrame in
+`Data`.
+
 ### get_calib
 
 Returns information about the calibration data and the calibration data that meets the specified conditions.
@@ -178,3 +184,8 @@ For DAT products, `check=True` requires a companion PDS4 label that references
 the indexed payload. When loading data, array shapes and numeric types must
 match the catalog's `Size` and `Type` when specified. The label controls byte
 order.
+
+## Development release 1.2.2-dev.8
+
+- Document how to retrieve the HRIC channel-wide distortion table by acquisition date without a filter selector.
+- Describe the resolved file path and the Polars DataFrame returned by CSV lookups with `read_data=True`.

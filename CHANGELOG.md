@@ -4,6 +4,11 @@ All notable changes to CalibDBReader are documented in this file.
 
 ## Unreleased
 
+## [1.2.2-dev.8] - 2026-11-21
+
+- Document how to retrieve the HRIC channel-wide distortion table by acquisition date without a filter selector.
+- Describe the resolved file path and the Polars DataFrame returned by CSV lookups with `read_data=True`.
+
 ## [1.2.2-dev.7] - 2026-11-12
 
 - Read STC calibration catalogs with named filters, legacy metadata and timing and temperature selectors.
