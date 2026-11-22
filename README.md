@@ -1,5 +1,5 @@
 # Calibration Database Reader
-![Version 1.2.2-dev.8](https://img.shields.io/badge/version-1.2.2--dev.8-blue?style=plastic)
+![Version 1.2.2-dev.9](https://img.shields.io/badge/version-1.2.2--dev.9-blue?style=plastic)
 ![Language Python 3.14](https://img.shields.io/badge/python-3.14-orange?style=plastic&logo=python)
 ![BepiColombo SIMBIO-SYS](https://img.shields.io/badge/BepiColombo-SIMBIO--SYS-blue?style=plastic)
 ![JUICE JANUS](https://img.shields.io/badge/JUICE-JANUS-blue?style=plastic)
@@ -7,12 +7,17 @@
 
 This software is able to read the calibration database in a standard format.
 
-Current version: `1.2.2-dev.8`.
+Current version: `1.2.2-dev.9`.
 
 The database consists of three elements:
-- The `manifest.json` file, which contains the instrument and database version
+- A `manifest*.json` file, which contains the instrument and database version
 - The `calib_db.csv` file, which contains information about the calibration data and their scope of applicability (see the specific [section](#database-fields) for details)
 - The `data` folder, which contains the calibration matrices
+
+The reader prefers `manifest_<channel>.json` when the catalog identifies a single
+channel. Otherwise it requires exactly one matching JSON manifest. Older
+`manifest.json` files remain supported, with `version.yml` as a fallback when
+there is no JSON manifest.
 
 ## Installation
 

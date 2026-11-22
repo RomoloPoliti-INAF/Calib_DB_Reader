@@ -1,4 +1,3 @@
-import json
 from dataclasses import dataclass, field, fields
 from datetime import UTC, datetime
 from importlib.metadata import version as get_version
@@ -9,9 +8,10 @@ import git
 import numpy as np
 import pds4_tools
 import polars as pl
-import yaml
 from rich import print
 from semantic_version_tools import Vers
+
+from .manifest import read_manifest
 
 __version__ = Vers(get_version("CalibDBReader")).full()
 
@@ -261,16 +261,13 @@ class CalibDB:
                 self.db = self.db.with_columns(numeric_filters.alias("Filter"))
             else:
                 self.db = self.db.with_columns(filters.alias("Filter"))
-        manifest_file = folder / "manifest.json"
-        legacy_metadata = folder / "version.yml"
-        if manifest_file.is_file():
-            manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
-        elif legacy_metadata.is_file():
-            manifest = yaml.safe_load(legacy_metadata.read_text(encoding="utf-8"))
-        else:
-            raise FileNotFoundError(
-                f"{manifest_file} does not exist. Not a valid calib_db folder"
-            )
+        channels = (
+            self.db["Channel"].drop_nulls().unique().to_list()
+            if "Channel" in self.db.columns
+            else []
+        )
+        channel = channels[0] if len(channels) == 1 else None
+        manifest = read_manifest(folder, channel=channel)
         self.version = manifest["version"]
         self.instrument = manifest["instrument"]
         if self.check:

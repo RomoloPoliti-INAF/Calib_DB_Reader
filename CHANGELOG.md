@@ -4,6 +4,11 @@ All notable changes to CalibDBReader are documented in this file.
 
 ## Unreleased
 
+## [1.2.2-dev.9] - 2026-11-22
+
+- Discover channel-specific JSON manifests and keep support for legacy manifest.json and version.yml.
+- Report ambiguous manifests and mismatched declared channels.
+
 ## [1.2.2-dev.8] - 2026-11-21
 
 - Document how to retrieve the HRIC channel-wide distortion table by acquisition date without a filter selector.
